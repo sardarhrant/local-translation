@@ -36,7 +36,7 @@ export default function WordList({
         <span>{sourceLabel}</span>
         <span>{targetLabel}</span>
         <span className="w-6" />
-        <span className="w-6" />
+        <span className="w-8" />
       </div>
       <ul>
         {words.map((word, index) => {
@@ -89,7 +89,7 @@ export default function WordList({
                 type="button"
                 onClick={() => onRequestDelete(word)}
                 aria-label="Delete word"
-                className="w-6 text-zinc-400 transition-colors hover:text-red-500"
+                className="w-8 text-2xl leading-none text-red-500 transition-colors hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
               >
                 ×
               </button>
