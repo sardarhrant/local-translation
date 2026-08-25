@@ -11,11 +11,13 @@ import {
 } from "@/app/lib/db";
 import { shuffle } from "@/app/lib/shuffle";
 import AddWordForm from "./AddWordForm";
+import BackupPanel from "./BackupPanel";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import ImportPanel from "./ImportPanel";
 import InstallPrompt from "./InstallPrompt";
 import ReminderListModal from "./ReminderListModal";
 import ReminderSettingsPanel from "./ReminderSettings";
+import ThemeToggle from "./ThemeToggle";
 import WordList from "./WordList";
 
 type TypeFilter = "all" | "idioms" | "starred";
@@ -57,6 +59,23 @@ export default function TranslationApp() {
     await addWordsBulk(
       pairs.map((pair) => ({ ...pair, isIdiom: false, remindMe: false })),
     );
+    const loaded = await getAllWords();
+    setWords((prev) => {
+      const existingIds = new Set(prev.map((w) => w.id));
+      const imported = loaded.filter((w) => !existingIds.has(w.id));
+      return [...shuffle(imported), ...prev];
+    });
+  }
+
+  async function handleBackupImport(
+    entries: {
+      en: string;
+      ru: string;
+      isIdiom: boolean;
+      remindMe: boolean;
+    }[],
+  ) {
+    await addWordsBulk(entries);
     const loaded = await getAllWords();
     setWords((prev) => {
       const existingIds = new Set(prev.map((w) => w.id));
@@ -123,19 +142,23 @@ export default function TranslationApp() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Translations
         </h1>
-        <button
-          type="button"
-          onClick={toggleDirection}
-          className="rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-        >
-          {direction === "en-ru" ? "English → Russian" : "Russian → English"}
-        </button>
+        <div className="flex items-center gap-2">
+          {!loading && <ThemeToggle />}
+          <button
+            type="button"
+            onClick={toggleDirection}
+            className="rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          >
+            {direction === "en-ru" ? "English → Russian" : "Russian → English"}
+          </button>
+        </div>
       </header>
 
       {!loading && <InstallPrompt />}
 
       <AddWordForm direction={direction} onAdd={handleAdd} />
       <ImportPanel direction={direction} onImport={handleImport} />
+      <BackupPanel words={words} onImport={handleBackupImport} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
