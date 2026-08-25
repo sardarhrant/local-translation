@@ -18,7 +18,7 @@ import ReminderListModal from "./ReminderListModal";
 import ReminderSettingsPanel from "./ReminderSettings";
 import WordList from "./WordList";
 
-type TypeFilter = "all" | "words" | "idioms" | "starred";
+type TypeFilter = "all" | "idioms" | "starred";
 
 export default function TranslationApp() {
   const [words, setWords] = useState<WordPair[]>([]);
@@ -103,7 +103,6 @@ export default function TranslationApp() {
   const filteredWords = useMemo(() => {
     const query = search.trim().toLowerCase();
     return words.filter((w) => {
-      if (typeFilter === "words" && w.isIdiom) return false;
       if (typeFilter === "idioms" && !w.isIdiom) return false;
       if (typeFilter === "starred" && !w.remindMe) return false;
       if (!query) return true;
@@ -149,7 +148,6 @@ export default function TranslationApp() {
           {(
             [
               { value: "all", label: "All" },
-              { value: "words", label: "Words" },
               { value: "idioms", label: "Idioms" },
               { value: "starred", label: "Starred" },
             ] as const
