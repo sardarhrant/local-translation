@@ -6,6 +6,7 @@ import {
   saveReminderSettings,
   type ReminderSettings,
 } from "@/app/lib/reminder";
+import type { Direction, WordPair } from "@/app/lib/types";
 
 const MAX_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -24,12 +25,26 @@ function getNotificationPermission(): NotificationPermission {
   return Notification.permission;
 }
 
-async function notifyWordsPending(pendingCount: number) {
+function buildReminderBody(names: string[]): string {
+  if (names.length === 0) {
+    return "Star a few words or phrases in Translations to get reminded about them.";
+  }
+  if (names.length === 1) {
+    return `"${names[0]}" is waiting for practice.`;
+  }
+
+  const shown = names.slice(0, 2).map((name) => `"${name}"`);
+  const extra = names.length - shown.length;
+
+  return extra > 0
+    ? `${shown.join(", ")}, and ${extra} more are waiting for practice.`
+    : `${shown.join(" and ")} are waiting for practice.`;
+}
+
+async function notifyWordsPending(starredWords: WordPair[], direction: Direction) {
   const title = "Time to review your words";
-  const body =
-    pendingCount > 0
-      ? `You have ${pendingCount} starred word${pendingCount === 1 ? "" : "s"}/phrase${pendingCount === 1 ? "" : "s"} waiting for practice.`
-      : "Star a few words or phrases in Translations to get reminded about them.";
+  const names = starredWords.map((w) => (direction === "en-ru" ? w.en : w.ru));
+  const body = buildReminderBody(names);
 
   try {
     // Once a service worker controls the page (always true for an installed
@@ -52,14 +67,17 @@ async function notifyWordsPending(pendingCount: number) {
 }
 
 interface ReminderSettingsPanelProps {
-  pendingCount: number;
+  starredWords: WordPair[];
+  direction: Direction;
   onOpenReminderList: () => void;
 }
 
 export default function ReminderSettingsPanel({
-  pendingCount,
+  starredWords,
+  direction,
   onOpenReminderList,
 }: ReminderSettingsPanelProps) {
+  const pendingCount = starredWords.length;
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<ReminderSettings>(() =>
     loadReminderSettings(),
@@ -75,7 +93,7 @@ export default function ReminderSettingsPanel({
       setSettings((prev) => {
         const dueAt = prev.lastNotifiedAt + prev.intervalMinutes * 60 * 1000;
         if (Date.now() < dueAt) return prev;
-        void notifyWordsPending(pendingCount);
+        void notifyWordsPending(starredWords, direction);
         const next = { ...prev, lastNotifiedAt: Date.now() };
         saveReminderSettings(next);
         return next;
@@ -92,7 +110,13 @@ export default function ReminderSettingsPanel({
       window.clearTimeout(initialCheck);
       window.clearInterval(intervalId);
     };
-  }, [settings.enabled, permission, pendingCount, settings.intervalMinutes]);
+  }, [
+    settings.enabled,
+    permission,
+    starredWords,
+    direction,
+    settings.intervalMinutes,
+  ]);
 
   function updateSettings(update: Partial<ReminderSettings>) {
     setSettings((prev) => {

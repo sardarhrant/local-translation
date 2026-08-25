@@ -112,8 +112,8 @@ export default function TranslationApp() {
     });
   }, [words, search, typeFilter]);
 
-  const remindCount = useMemo(
-    () => words.filter((w) => w.remindMe).length,
+  const starredWords = useMemo(
+    () => words.filter((w) => w.remindMe),
     [words],
   );
 
@@ -175,7 +175,8 @@ export default function TranslationApp() {
       ) : (
         <>
           <ReminderSettingsPanel
-            pendingCount={remindCount}
+            starredWords={starredWords}
+            direction={direction}
             onOpenReminderList={() => setShowReminderList(true)}
           />
           <WordList
@@ -191,7 +192,7 @@ export default function TranslationApp() {
 
       {showReminderList && (
         <ReminderListModal
-          words={words.filter((w) => w.remindMe)}
+          words={starredWords}
           direction={direction}
           revealed={revealed}
           onToggleReveal={toggleReveal}
