@@ -24,17 +24,31 @@ function getNotificationPermission(): NotificationPermission {
   return Notification.permission;
 }
 
-function notifyWordsPending(pendingCount: number) {
-  const notification = new Notification("Time to review your words", {
-    body:
-      pendingCount > 0
-        ? `You have ${pendingCount} starred word${pendingCount === 1 ? "" : "s"}/phrase${pendingCount === 1 ? "" : "s"} waiting for practice.`
-        : "Star a few words or phrases in Translations to get reminded about them.",
-  });
-  notification.onclick = () => {
-    window.focus();
-    notification.close();
-  };
+async function notifyWordsPending(pendingCount: number) {
+  const title = "Time to review your words";
+  const body =
+    pendingCount > 0
+      ? `You have ${pendingCount} starred word${pendingCount === 1 ? "" : "s"}/phrase${pendingCount === 1 ? "" : "s"} waiting for practice.`
+      : "Star a few words or phrases in Translations to get reminded about them.";
+
+  try {
+    // Once a service worker controls the page (always true for an installed
+    // PWA), browsers throw on `new Notification()` and require showing
+    // notifications through the service worker registration instead.
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(title, { body });
+      return;
+    }
+
+    const notification = new Notification(title, { body });
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
+  } catch {
+    // A failed/unsupported notification should never take down the app.
+  }
 }
 
 interface ReminderSettingsPanelProps {
@@ -61,7 +75,7 @@ export default function ReminderSettingsPanel({
       setSettings((prev) => {
         const dueAt = prev.lastNotifiedAt + prev.intervalMinutes * 60 * 1000;
         if (Date.now() < dueAt) return prev;
-        notifyWordsPending(pendingCount);
+        void notifyWordsPending(pendingCount);
         const next = { ...prev, lastNotifiedAt: Date.now() };
         saveReminderSettings(next);
         return next;
