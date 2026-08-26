@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Direction, WordPair } from "@/app/lib/types";
 import {
   addWord,
@@ -18,6 +18,7 @@ import InstallPrompt from "./InstallPrompt";
 import ReminderListModal from "./ReminderListModal";
 import ReminderSettingsPanel from "./ReminderSettings";
 import ThemeToggle from "./ThemeToggle";
+import Toast from "./Toast";
 import WordList from "./WordList";
 
 type TypeFilter = "all" | "idioms" | "starred";
@@ -31,6 +32,9 @@ export default function TranslationApp() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [wordToDelete, setWordToDelete] = useState<WordPair | null>(null);
   const [showReminderList, setShowReminderList] = useState(false);
+  const [toast, setToast] = useState<{ title: string; body: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     getAllWords()
@@ -109,6 +113,10 @@ export default function TranslationApp() {
     });
     setWordToDelete(null);
   }
+
+  const handleReminderDue = useCallback((title: string, body: string) => {
+    setToast({ title, body });
+  }, []);
 
   function toggleReveal(id: number) {
     setRevealed((prev) => {
@@ -201,6 +209,7 @@ export default function TranslationApp() {
             starredWords={starredWords}
             direction={direction}
             onOpenReminderList={() => setShowReminderList(true)}
+            onReminderDue={handleReminderDue}
           />
           <WordList
             words={filteredWords}
@@ -230,6 +239,18 @@ export default function TranslationApp() {
           word={wordToDelete}
           onConfirm={confirmDelete}
           onCancel={cancelDelete}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          title={toast.title}
+          body={toast.body}
+          onDismiss={() => setToast(null)}
+          onClick={() => {
+            setToast(null);
+            setShowReminderList(true);
+          }}
         />
       )}
     </div>

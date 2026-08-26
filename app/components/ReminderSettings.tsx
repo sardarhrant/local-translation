@@ -41,11 +41,15 @@ function buildReminderBody(names: string[]): string {
     : `${shown.join(" and ")} are waiting for practice.`;
 }
 
-async function notifyWordsPending(starredWords: WordPair[], direction: Direction) {
-  const title = "Time to review your words";
-  const names = starredWords.map((w) => (direction === "en-ru" ? w.en : w.ru));
-  const body = buildReminderBody(names);
+function isAppForeground(): boolean {
+  return (
+    typeof document !== "undefined" &&
+    document.visibilityState === "visible" &&
+    document.hasFocus()
+  );
+}
 
+async function showOsNotification(title: string, body: string) {
   try {
     // Once a service worker controls the page (always true for an installed
     // PWA), browsers throw on `new Notification()` and require showing
@@ -70,12 +74,14 @@ interface ReminderSettingsPanelProps {
   starredWords: WordPair[];
   direction: Direction;
   onOpenReminderList: () => void;
+  onReminderDue: (title: string, body: string) => void;
 }
 
 export default function ReminderSettingsPanel({
   starredWords,
   direction,
   onOpenReminderList,
+  onReminderDue,
 }: ReminderSettingsPanelProps) {
   const pendingCount = starredWords.length;
   const [open, setOpen] = useState(false);
@@ -93,7 +99,19 @@ export default function ReminderSettingsPanel({
       setSettings((prev) => {
         const dueAt = prev.lastNotifiedAt + prev.intervalMinutes * 60 * 1000;
         if (Date.now() < dueAt) return prev;
-        void notifyWordsPending(starredWords, direction);
+
+        const title = "Time to review your words";
+        const names = starredWords.map((w) =>
+          direction === "en-ru" ? w.en : w.ru,
+        );
+        const body = buildReminderBody(names);
+
+        if (isAppForeground()) {
+          onReminderDue(title, body);
+        } else {
+          void showOsNotification(title, body);
+        }
+
         const next = { ...prev, lastNotifiedAt: Date.now() };
         saveReminderSettings(next);
         return next;
@@ -116,6 +134,7 @@ export default function ReminderSettingsPanel({
     starredWords,
     direction,
     settings.intervalMinutes,
+    onReminderDue,
   ]);
 
   function updateSettings(update: Partial<ReminderSettings>) {
