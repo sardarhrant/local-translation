@@ -18,20 +18,30 @@ function isLegacyRecord(raw: unknown): raw is LegacyWordPair {
   return typeof record.en === "string" && typeof record.langA !== "string";
 }
 
+function needsMigration(raw: unknown): boolean {
+  const record = raw as Partial<WordPair>;
+  return isLegacyRecord(raw) || typeof record.description !== "string";
+}
+
 function normalizeRecord(raw: unknown): WordPair {
-  if (isLegacyRecord(raw)) {
-    return {
-      id: raw.id,
-      langA: "en",
-      langB: "ru",
-      textA: raw.en,
-      textB: raw.ru,
-      isIdiom: raw.isIdiom,
-      remindMe: raw.remindMe,
-      createdAt: raw.createdAt,
-    };
-  }
-  return raw as WordPair;
+  const base = isLegacyRecord(raw)
+    ? {
+        id: raw.id,
+        langA: "en",
+        langB: "ru",
+        textA: raw.en,
+        textB: raw.ru,
+        isIdiom: raw.isIdiom,
+        remindMe: raw.remindMe,
+        createdAt: raw.createdAt,
+      }
+    : (raw as WordPair);
+
+  const description = (raw as Partial<WordPair>).description;
+  return {
+    ...base,
+    description: typeof description === "string" ? description : "",
+  };
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -62,9 +72,9 @@ export async function getAllWords(): Promise<WordPair[]> {
     request.onerror = () => reject(request.error);
   });
 
-  const legacyOnes = raw.filter(isLegacyRecord);
-  if (legacyOnes.length > 0) {
-    void persistMigratedRecords(legacyOnes.map(normalizeRecord));
+  const outdated = raw.filter(needsMigration);
+  if (outdated.length > 0) {
+    void persistMigratedRecords(outdated.map(normalizeRecord));
   }
 
   return raw.map(normalizeRecord);

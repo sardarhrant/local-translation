@@ -14,6 +14,7 @@ interface WordListProps {
   revealed: Set<number>;
   onToggleReveal: (id: number) => void;
   onToggleRemind: (word: WordPair) => void;
+  onRequestEdit: (word: WordPair) => void;
   onRequestDelete: (word: WordPair) => void;
 }
 
@@ -25,6 +26,7 @@ export default function WordList({
   revealed,
   onToggleReveal,
   onToggleRemind,
+  onRequestEdit,
   onRequestDelete,
 }: WordListProps) {
   const crossPair = sourceLang === null;
@@ -39,9 +41,10 @@ export default function WordList({
 
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
-      <div className="grid grid-cols-[1fr_1fr_auto_auto] bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+      <div className="grid grid-cols-[1fr_1fr_auto_auto_auto] bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
         <span>{crossPair ? "Word" : sourceLabel}</span>
         <span>{crossPair ? "Translation" : targetLabel}</span>
+        <span className="w-6" />
         <span className="w-6" />
         <span className="w-8" />
       </div>
@@ -53,7 +56,7 @@ export default function WordList({
           return (
             <li
               key={word.id}
-              className={`grid grid-cols-[1fr_1fr_auto_auto] items-center px-4 py-2 text-sm ${
+              className={`grid grid-cols-[1fr_1fr_auto_auto_auto] items-center px-4 py-2 text-sm ${
                 index > 0 ? "border-t border-zinc-200 dark:border-zinc-800" : ""
               }`}
             >
@@ -73,20 +76,30 @@ export default function WordList({
               <button
                 type="button"
                 onClick={() => onToggleReveal(word.id)}
-                className="flex w-fit cursor-pointer items-center gap-2 rounded px-1 text-left"
+                className="flex w-fit cursor-pointer flex-col items-start gap-0.5 rounded px-1 text-left"
                 aria-label={
                   isRevealed ? "Hide translation" : "Show translation"
                 }
               >
-                <span
-                  className="transition-[filter] duration-150"
-                  style={{ filter: isRevealed ? "none" : "blur(6px)" }}
-                >
-                  {display.targetText}
+                <span className="flex items-center gap-2">
+                  <span
+                    className="transition-[filter] duration-150"
+                    style={{ filter: isRevealed ? "none" : "blur(6px)" }}
+                  >
+                    {display.targetText}
+                  </span>
+                  {crossPair && (
+                    <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-medium uppercase text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                      {getLanguageName(display.targetLang)}
+                    </span>
+                  )}
                 </span>
-                {crossPair && (
-                  <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-medium uppercase text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-                    {getLanguageName(display.targetLang)}
+                {word.description && (
+                  <span
+                    className="text-xs text-zinc-500 transition-[filter] duration-150 dark:text-zinc-400"
+                    style={{ filter: isRevealed ? "none" : "blur(6px)" }}
+                  >
+                    {word.description}
                   </span>
                 )}
               </button>
@@ -106,6 +119,14 @@ export default function WordList({
                 }`}
               >
                 {word.remindMe ? "★" : "☆"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onRequestEdit(word)}
+                aria-label="Edit word"
+                className="w-6 text-base leading-none text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-200"
+              >
+                ✎
               </button>
               <button
                 type="button"

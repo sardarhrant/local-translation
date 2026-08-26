@@ -11,9 +11,10 @@ import {
   updateWord,
 } from "@/app/lib/db";
 import { shuffle } from "@/app/lib/shuffle";
-import AddWordForm from "./AddWordForm";
+import AddWordForm, { type NewWordInput } from "./AddWordForm";
 import BackupPanel from "./BackupPanel";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
+import EditWordModal, { type WordEdits } from "./EditWordModal";
 import ImportPanel from "./ImportPanel";
 import InstallPrompt from "./InstallPrompt";
 import LanguagePairSelector from "./LanguagePairSelector";
@@ -34,6 +35,7 @@ export default function TranslationApp() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [wordToDelete, setWordToDelete] = useState<WordPair | null>(null);
+  const [wordToEdit, setWordToEdit] = useState<WordPair | null>(null);
   const [showReminderList, setShowReminderList] = useState(false);
   const [toast, setToast] = useState<{ title: string; body: string } | null>(
     null,
@@ -67,16 +69,18 @@ export default function TranslationApp() {
     setRevealed(new Set());
   }
 
-  async function handleAdd(
-    sourceText: string,
-    targetText: string,
-    isIdiom: boolean,
-  ) {
+  async function handleAdd({
+    sourceText,
+    targetText,
+    description,
+    isIdiom,
+  }: NewWordInput) {
     const word = await addWord({
       langA: sourceLang,
       langB: targetLang,
       textA: sourceText,
       textB: targetText,
+      description,
       isIdiom,
       remindMe: false,
     });
@@ -92,6 +96,7 @@ export default function TranslationApp() {
         langB: targetLang,
         textA: sourceText,
         textB: targetText,
+        description: "",
         isIdiom: false,
         remindMe: false,
       })),
@@ -110,6 +115,7 @@ export default function TranslationApp() {
       langB: string;
       textA: string;
       textB: string;
+      description: string;
       isIdiom: boolean;
       remindMe: boolean;
     }[],
@@ -126,6 +132,20 @@ export default function TranslationApp() {
   async function handleToggleRemind(word: WordPair) {
     const updated = await updateWord(word.id, { remindMe: !word.remindMe });
     setWords((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
+  }
+
+  function requestEdit(word: WordPair) {
+    setWordToEdit(word);
+  }
+
+  function cancelEdit() {
+    setWordToEdit(null);
+  }
+
+  async function saveEdit(id: number, edits: WordEdits) {
+    const updated = await updateWord(id, edits);
+    setWords((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
+    setWordToEdit(null);
   }
 
   function requestDelete(word: WordPair) {
@@ -273,6 +293,7 @@ export default function TranslationApp() {
             revealed={revealed}
             onToggleReveal={toggleReveal}
             onToggleRemind={handleToggleRemind}
+            onRequestEdit={requestEdit}
             onRequestDelete={requestDelete}
           />
         </>
@@ -284,6 +305,7 @@ export default function TranslationApp() {
           revealed={revealed}
           onToggleReveal={toggleReveal}
           onToggleRemind={handleToggleRemind}
+          onRequestEdit={requestEdit}
           onRequestDelete={requestDelete}
           onClose={() => setShowReminderList(false)}
         />
@@ -294,6 +316,16 @@ export default function TranslationApp() {
           word={wordToDelete}
           onConfirm={confirmDelete}
           onCancel={cancelDelete}
+        />
+      )}
+
+      {wordToEdit && (
+        <EditWordModal
+          word={wordToEdit}
+          sourceLabel={getLanguageName(wordToEdit.langA)}
+          targetLabel={getLanguageName(wordToEdit.langB)}
+          onSave={saveEdit}
+          onCancel={cancelEdit}
         />
       )}
 

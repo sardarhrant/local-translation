@@ -2,11 +2,21 @@
 
 import { useState, type FormEvent } from "react";
 
+export interface NewWordInput {
+  sourceText: string;
+  targetText: string;
+  description: string;
+  isIdiom: boolean;
+}
+
 interface AddWordFormProps {
   sourceLabel: string;
   targetLabel: string;
-  onAdd: (sourceText: string, targetText: string, isIdiom: boolean) => void;
+  onAdd: (input: NewWordInput) => void;
 }
+
+const fieldClassName =
+  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500";
 
 export default function AddWordForm({
   sourceLabel,
@@ -15,6 +25,7 @@ export default function AddWordForm({
 }: AddWordFormProps) {
   const [sourceValue, setSourceValue] = useState("");
   const [targetValue, setTargetValue] = useState("");
+  const [description, setDescription] = useState("");
   const [isIdiom, setIsIdiom] = useState(false);
 
   function handleSubmit(event: FormEvent) {
@@ -23,10 +34,16 @@ export default function AddWordForm({
     const target = targetValue.trim();
     if (!source || !target) return;
 
-    onAdd(source, target, isIdiom);
+    onAdd({
+      sourceText: source,
+      targetText: target,
+      description: description.trim(),
+      isIdiom,
+    });
 
     setSourceValue("");
     setTargetValue("");
+    setDescription("");
     setIsIdiom(false);
   }
 
@@ -41,7 +58,7 @@ export default function AddWordForm({
             value={sourceValue}
             onChange={(e) => setSourceValue(e.target.value)}
             placeholder={`Word in ${sourceLabel}`}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+            className={fieldClassName}
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -52,7 +69,7 @@ export default function AddWordForm({
             value={targetValue}
             onChange={(e) => setTargetValue(e.target.value)}
             placeholder={`Translation in ${targetLabel}`}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+            className={fieldClassName}
           />
         </label>
         <button
@@ -63,6 +80,18 @@ export default function AddWordForm({
           Add word
         </button>
       </div>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-zinc-600 dark:text-zinc-400">
+          Description (optional)
+        </span>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          placeholder="Usage notes, an example sentence, context..."
+          className={fieldClassName}
+        />
+      </label>
       <label className="flex w-fit items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
         <input
           type="checkbox"

@@ -9,6 +9,7 @@ interface ReminderListModalProps {
   revealed: Set<number>;
   onToggleReveal: (id: number) => void;
   onToggleRemind: (word: WordPair) => void;
+  onRequestEdit: (word: WordPair) => void;
   onRequestDelete: (word: WordPair) => void;
   onClose: () => void;
 }
@@ -18,6 +19,7 @@ export default function ReminderListModal({
   revealed,
   onToggleReveal,
   onToggleRemind,
+  onRequestEdit,
   onRequestDelete,
   onClose,
 }: ReminderListModalProps) {
@@ -69,6 +71,7 @@ export default function ReminderListModal({
               revealed={revealed}
               onToggleReveal={onToggleReveal}
               onToggleRemind={onToggleRemind}
+              onRequestEdit={onRequestEdit}
               onRequestDelete={onRequestDelete}
             />
           )}

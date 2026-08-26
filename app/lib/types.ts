@@ -4,6 +4,7 @@ export interface WordPair {
   langB: string;
   textA: string;
   textB: string;
+  description: string;
   isIdiom: boolean;
   remindMe: boolean;
   createdAt: number;
@@ -11,7 +12,13 @@ export interface WordPair {
 
 export type NewWordPair = Pick<
   WordPair,
-  "langA" | "langB" | "textA" | "textB" | "isIdiom" | "remindMe"
+  | "langA"
+  | "langB"
+  | "textA"
+  | "textB"
+  | "description"
+  | "isIdiom"
+  | "remindMe"
 >;
 
 /** How a word pair should be shown for a given "I'm looking from this language" choice. */

@@ -9,6 +9,7 @@ interface BackupEntry {
   langB: string;
   textA: string;
   textB: string;
+  description: string;
   isIdiom: boolean;
   remindMe: boolean;
 }
@@ -48,14 +49,17 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
     const payload: BackupFile = {
       version: 2,
       exportedAt: new Date().toISOString(),
-      words: words.map(({ langA, langB, textA, textB, isIdiom, remindMe }) => ({
-        langA,
-        langB,
-        textA,
-        textB,
-        isIdiom,
-        remindMe,
-      })),
+      words: words.map(
+        ({ langA, langB, textA, textB, description, isIdiom, remindMe }) => ({
+          langA,
+          langB,
+          textA,
+          textB,
+          description,
+          isIdiom,
+          remindMe,
+        }),
+      ),
     };
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
@@ -132,6 +136,10 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
         langB,
         textA,
         textB,
+        description:
+          typeof entry?.description === "string"
+            ? entry.description.trim()
+            : "",
         isIdiom: entry?.isIdiom === true,
         remindMe: entry?.remindMe === true,
       });
