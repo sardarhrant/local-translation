@@ -76,30 +76,20 @@ export default function WordList({
               <button
                 type="button"
                 onClick={() => onToggleReveal(word.id)}
-                className="flex w-fit cursor-pointer flex-col items-start gap-0.5 rounded px-1 text-left"
+                className="flex w-fit cursor-pointer items-center gap-2 rounded px-1 text-left"
                 aria-label={
                   isRevealed ? "Hide translation" : "Show translation"
                 }
               >
-                <span className="flex items-center gap-2">
-                  <span
-                    className="transition-[filter] duration-150"
-                    style={{ filter: isRevealed ? "none" : "blur(6px)" }}
-                  >
-                    {display.targetText}
-                  </span>
-                  {crossPair && (
-                    <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-medium uppercase text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-                      {getLanguageName(display.targetLang)}
-                    </span>
-                  )}
+                <span
+                  className="transition-[filter] duration-150"
+                  style={{ filter: isRevealed ? "none" : "blur(6px)" }}
+                >
+                  {display.targetText}
                 </span>
-                {word.description && (
-                  <span
-                    className="rounded-[4px] border border-zinc-200 px-2 py-1 text-xs text-zinc-500 transition-[filter] duration-150 dark:border-zinc-700 dark:text-zinc-400"
-                    style={{ filter: isRevealed ? "none" : "blur(6px)" }}
-                  >
-                    {word.description}
+                {crossPair && (
+                  <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-medium uppercase text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                    {getLanguageName(display.targetLang)}
                   </span>
                 )}
               </button>
@@ -136,6 +126,23 @@ export default function WordList({
               >
                 ×
               </button>
+              {word.description && (
+                <button
+                  type="button"
+                  onClick={() => onToggleReveal(word.id)}
+                  className="col-span-full mt-1 w-fit cursor-pointer rounded-[4px] border border-zinc-200 px-2 py-1 text-left text-xs text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
+                  aria-label={
+                    isRevealed ? "Hide translation" : "Show translation"
+                  }
+                >
+                  <span
+                    className="transition-[filter] duration-150"
+                    style={{ filter: isRevealed ? "none" : "blur(6px)" }}
+                  >
+                    {word.description}
+                  </span>
+                </button>
+              )}
             </li>
           );
         })}
