@@ -88,9 +88,13 @@ export default function WordList({
                   index > 0 ? "border-t border-zinc-200 dark:border-zinc-800" : ""
                 }`}
               >
-                <span className="flex flex-wrap items-start gap-2">
+                <span
+                  className={`relative flex flex-wrap items-start gap-2 ${
+                    word.level ? "pt-4" : ""
+                  }`}
+                >
                   {word.level && (
-                    <span className="rounded bg-blue-100 px-1 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                    <span className="absolute left-0 top-0 rounded bg-blue-100 px-1 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                       {word.level}
                     </span>
                   )}
