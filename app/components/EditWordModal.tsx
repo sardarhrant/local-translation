@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { WordPair } from "@/app/lib/types";
+import { CEFR_LEVELS } from "@/app/lib/levels";
 
 export interface WordEdits {
   textA: string;
   textB: string;
   description: string;
+  level: string;
   isIdiom: boolean;
 }
 
@@ -31,6 +33,7 @@ export default function EditWordModal({
   const [textA, setTextA] = useState(word.textA);
   const [textB, setTextB] = useState(word.textB);
   const [description, setDescription] = useState(word.description);
+  const [level, setLevel] = useState(word.level);
   const [isIdiom, setIsIdiom] = useState(word.isIdiom);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
@@ -51,7 +54,13 @@ export default function EditWordModal({
     const b = textB.trim();
     if (!a || !b) return;
 
-    onSave(word.id, { textA: a, textB: b, description: description.trim(), isIdiom });
+    onSave(word.id, {
+      textA: a,
+      textB: b,
+      description: description.trim(),
+      level,
+      isIdiom,
+    });
   }
 
   return (
@@ -100,6 +109,22 @@ export default function EditWordModal({
             placeholder="Usage notes, an example sentence, context..."
             className={fieldClassName}
           />
+        </label>
+
+        <label className="flex items-center gap-2 text-sm">
+          <span className="text-zinc-600 dark:text-zinc-400">Level</span>
+          <select
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+            className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+          >
+            <option value="">No level</option>
+            {CEFR_LEVELS.map((cefrLevel) => (
+              <option key={cefrLevel} value={cefrLevel}>
+                {cefrLevel}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">

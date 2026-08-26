@@ -61,6 +61,11 @@ export default function WordList({
               }`}
             >
               <span className="flex items-center gap-2">
+                {word.level && (
+                  <span className="rounded bg-blue-100 px-1 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                    {word.level}
+                  </span>
+                )}
                 {display.sourceText}
                 {crossPair && (
                   <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-medium uppercase text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">

@@ -5,6 +5,7 @@ export interface WordPair {
   textA: string;
   textB: string;
   description: string;
+  level: string;
   isIdiom: boolean;
   remindMe: boolean;
   createdAt: number;
@@ -17,6 +18,7 @@ export type NewWordPair = Pick<
   | "textA"
   | "textB"
   | "description"
+  | "level"
   | "isIdiom"
   | "remindMe"
 >;

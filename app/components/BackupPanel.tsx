@@ -10,6 +10,7 @@ interface BackupEntry {
   textA: string;
   textB: string;
   description: string;
+  level: string;
   isIdiom: boolean;
   remindMe: boolean;
 }
@@ -50,12 +51,22 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
       version: 2,
       exportedAt: new Date().toISOString(),
       words: words.map(
-        ({ langA, langB, textA, textB, description, isIdiom, remindMe }) => ({
+        ({
           langA,
           langB,
           textA,
           textB,
           description,
+          level,
+          isIdiom,
+          remindMe,
+        }) => ({
+          langA,
+          langB,
+          textA,
+          textB,
+          description,
+          level,
           isIdiom,
           remindMe,
         }),
@@ -140,6 +151,7 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
           typeof entry?.description === "string"
             ? entry.description.trim()
             : "",
+        level: typeof entry?.level === "string" ? entry.level.trim() : "",
         isIdiom: entry?.isIdiom === true,
         remindMe: entry?.remindMe === true,
       });

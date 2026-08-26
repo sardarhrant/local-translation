@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { belongsToPair, type WordPair } from "@/app/lib/types";
 import { getLanguageName } from "@/app/lib/languages";
+import { CEFR_LEVELS } from "@/app/lib/levels";
 import {
   addWord,
   addWordsBulk,
@@ -34,6 +35,7 @@ export default function TranslationApp() {
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [levelFilter, setLevelFilter] = useState("all");
   const [wordToDelete, setWordToDelete] = useState<WordPair | null>(null);
   const [wordToEdit, setWordToEdit] = useState<WordPair | null>(null);
   const [showReminderList, setShowReminderList] = useState(false);
@@ -74,6 +76,7 @@ export default function TranslationApp() {
     sourceText,
     targetText,
     description,
+    level,
     isIdiom,
   }: NewWordInput) {
     const word = await addWord({
@@ -82,6 +85,7 @@ export default function TranslationApp() {
       textA: sourceText,
       textB: targetText,
       description,
+      level,
       isIdiom,
       remindMe: false,
     });
@@ -95,6 +99,7 @@ export default function TranslationApp() {
       textA: string;
       textB: string;
       description: string;
+      level: string;
       isIdiom: boolean;
       remindMe: boolean;
     }[],
@@ -171,13 +176,20 @@ export default function TranslationApp() {
     return pairWords.filter((w) => {
       if (typeFilter === "idioms" && !w.isIdiom) return false;
       if (typeFilter === "starred" && !w.remindMe) return false;
+      if (levelFilter === "none" && w.level) return false;
+      if (
+        levelFilter !== "all" &&
+        levelFilter !== "none" &&
+        w.level !== levelFilter
+      )
+        return false;
       if (!query) return true;
       return (
         w.textA.toLowerCase().includes(query) ||
         w.textB.toLowerCase().includes(query)
       );
     });
-  }, [pairWords, search, typeFilter]);
+  }, [pairWords, search, typeFilter, levelFilter]);
 
   const starredWords = useMemo(
     () => words.filter((w) => w.remindMe),
@@ -243,6 +255,20 @@ export default function TranslationApp() {
             </button>
           ))}
         </div>
+        <select
+          value={levelFilter}
+          onChange={(e) => setLevelFilter(e.target.value)}
+          aria-label="Filter by level"
+          className="w-fit rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+        >
+          <option value="all">All levels</option>
+          <option value="none">No level</option>
+          {CEFR_LEVELS.map((cefrLevel) => (
+            <option key={cefrLevel} value={cefrLevel}>
+              {cefrLevel}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           onClick={() => setShowGame(true)}

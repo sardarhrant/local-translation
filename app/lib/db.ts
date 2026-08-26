@@ -20,7 +20,11 @@ function isLegacyRecord(raw: unknown): raw is LegacyWordPair {
 
 function needsMigration(raw: unknown): boolean {
   const record = raw as Partial<WordPair>;
-  return isLegacyRecord(raw) || typeof record.description !== "string";
+  return (
+    isLegacyRecord(raw) ||
+    typeof record.description !== "string" ||
+    typeof record.level !== "string"
+  );
 }
 
 function normalizeRecord(raw: unknown): WordPair {
@@ -37,10 +41,11 @@ function normalizeRecord(raw: unknown): WordPair {
       }
     : (raw as WordPair);
 
-  const description = (raw as Partial<WordPair>).description;
+  const { description, level } = raw as Partial<WordPair>;
   return {
     ...base,
     description: typeof description === "string" ? description : "",
+    level: typeof level === "string" ? level : "",
   };
 }
 

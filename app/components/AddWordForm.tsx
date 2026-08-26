@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { CEFR_LEVELS } from "@/app/lib/levels";
 
 export interface NewWordInput {
   sourceText: string;
   targetText: string;
   description: string;
+  level: string;
   isIdiom: boolean;
 }
 
@@ -26,6 +28,7 @@ export default function AddWordForm({
   const [sourceValue, setSourceValue] = useState("");
   const [targetValue, setTargetValue] = useState("");
   const [description, setDescription] = useState("");
+  const [level, setLevel] = useState("");
   const [isIdiom, setIsIdiom] = useState(false);
 
   function handleSubmit(event: FormEvent) {
@@ -38,12 +41,14 @@ export default function AddWordForm({
       sourceText: source,
       targetText: target,
       description: description.trim(),
+      level,
       isIdiom,
     });
 
     setSourceValue("");
     setTargetValue("");
     setDescription("");
+    setLevel("");
     setIsIdiom(false);
   }
 
@@ -92,15 +97,32 @@ export default function AddWordForm({
           className={fieldClassName}
         />
       </label>
-      <label className="flex w-fit items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-        <input
-          type="checkbox"
-          checked={isIdiom}
-          onChange={(e) => setIsIdiom(e.target.checked)}
-          className="h-4 w-4 rounded border-zinc-300 accent-zinc-900 dark:border-zinc-700 dark:accent-zinc-50"
-        />
-        This is an idiom / phrase
-      </label>
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <span className="text-zinc-600 dark:text-zinc-400">Level</span>
+          <select
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+            className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+          >
+            <option value="">No level</option>
+            {CEFR_LEVELS.map((cefrLevel) => (
+              <option key={cefrLevel} value={cefrLevel}>
+                {cefrLevel}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <input
+            type="checkbox"
+            checked={isIdiom}
+            onChange={(e) => setIsIdiom(e.target.checked)}
+            className="h-4 w-4 rounded border-zinc-300 accent-zinc-900 dark:border-zinc-700 dark:accent-zinc-50"
+          />
+          This is an idiom / phrase
+        </label>
+      </div>
     </form>
   );
 }
