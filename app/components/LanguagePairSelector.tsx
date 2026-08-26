@@ -11,7 +11,7 @@ interface LanguagePairSelectorProps {
 }
 
 const selectClassName =
-  "rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium outline-none transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800";
+  "min-w-[9.5rem] rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium outline-none transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800";
 
 export default function LanguagePairSelector({
   sourceLang,
@@ -21,7 +21,7 @@ export default function LanguagePairSelector({
   onSwap,
 }: LanguagePairSelectorProps) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-3">
       <select
         value={sourceLang}
         onChange={(e) => onChangeSource(e.target.value)}
@@ -38,7 +38,7 @@ export default function LanguagePairSelector({
         type="button"
         onClick={onSwap}
         aria-label="Swap languages"
-        className="rounded-full border border-zinc-300 px-2 py-1.5 text-sm transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+        className="rounded-full border border-zinc-300 px-3 py-2.5 text-base transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
       >
         ⇄
       </button>

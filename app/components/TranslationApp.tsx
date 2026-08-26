@@ -194,7 +194,7 @@ export default function TranslationApp() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Translations
         </h1>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {!loading && <ThemeToggle />}
           <LanguagePairSelector
             sourceLang={sourceLang}
