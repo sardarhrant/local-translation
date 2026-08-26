@@ -15,7 +15,6 @@ import AddWordForm, { type NewWordInput } from "./AddWordForm";
 import BackupPanel from "./BackupPanel";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import EditWordModal, { type WordEdits } from "./EditWordModal";
-import ImportPanel from "./ImportPanel";
 import InstallPrompt from "./InstallPrompt";
 import LanguagePairSelector from "./LanguagePairSelector";
 import ReminderListModal from "./ReminderListModal";
@@ -85,28 +84,6 @@ export default function TranslationApp() {
       remindMe: false,
     });
     setWords((prev) => [word, ...prev]);
-  }
-
-  async function handleImport(
-    pairs: { sourceText: string; targetText: string }[],
-  ) {
-    await addWordsBulk(
-      pairs.map(({ sourceText, targetText }) => ({
-        langA: sourceLang,
-        langB: targetLang,
-        textA: sourceText,
-        textB: targetText,
-        description: "",
-        isIdiom: false,
-        remindMe: false,
-      })),
-    );
-    const loaded = await getAllWords();
-    setWords((prev) => {
-      const existingIds = new Set(prev.map((w) => w.id));
-      const imported = loaded.filter((w) => !existingIds.has(w.id));
-      return [...shuffle(imported), ...prev];
-    });
   }
 
   async function handleBackupImport(
@@ -232,14 +209,6 @@ export default function TranslationApp() {
         sourceLabel={sourceLabel}
         targetLabel={targetLabel}
         onAdd={handleAdd}
-      />
-      <ImportPanel
-        sourceLang={sourceLang}
-        targetLang={targetLang}
-        sourceLabel={sourceLabel}
-        targetLabel={targetLabel}
-        existingWords={pairWords}
-        onImport={handleImport}
       />
       <BackupPanel words={words} onImport={handleBackupImport} />
 

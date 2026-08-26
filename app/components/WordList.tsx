@@ -34,7 +34,7 @@ export default function WordList({
   if (words.length === 0) {
     return (
       <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
-        No words yet. Add one above, or bulk import your list.
+        No words yet. Add one above, or import a backup.
       </p>
     );
   }
@@ -44,9 +44,9 @@ export default function WordList({
       <div className="grid grid-cols-[1fr_1fr_auto_auto_auto] bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
         <span>{crossPair ? "Word" : sourceLabel}</span>
         <span>{crossPair ? "Translation" : targetLabel}</span>
+        <span className="w-5" />
+        <span className="w-5" />
         <span className="w-6" />
-        <span className="w-6" />
-        <span className="w-8" />
       </div>
       <ul>
         {words.map((word, index) => {
@@ -112,7 +112,7 @@ export default function WordList({
                     : "Add to reminder list"
                 }
                 aria-pressed={word.remindMe}
-                className={`w-6 text-lg leading-none transition-colors ${
+                className={`w-5 text-lg leading-none transition-colors ${
                   word.remindMe
                     ? "text-amber-500 hover:text-amber-600"
                     : "text-zinc-300 hover:text-zinc-400 dark:text-zinc-600 dark:hover:text-zinc-500"
@@ -124,7 +124,7 @@ export default function WordList({
                 type="button"
                 onClick={() => onRequestEdit(word)}
                 aria-label="Edit word"
-                className="w-6 text-base leading-none text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="w-5 text-base leading-none text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 ✎
               </button>
@@ -132,7 +132,7 @@ export default function WordList({
                 type="button"
                 onClick={() => onRequestDelete(word)}
                 aria-label="Delete word"
-                className="w-8 text-2xl leading-none text-red-500 transition-colors hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
+                className="w-6 text-2xl leading-none text-red-500 transition-colors hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
               >
                 ×
               </button>
