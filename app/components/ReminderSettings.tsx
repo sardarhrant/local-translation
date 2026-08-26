@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   loadReminderSettings,
   saveReminderSettings,
@@ -89,29 +89,34 @@ export default function ReminderSettingsPanel({
   const [permission, setPermission] = useState<NotificationPermission>(() =>
     getNotificationPermission(),
   );
+  const settingsRef = useRef(settings);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   useEffect(() => {
     if (!settings.enabled || permission !== "granted") return;
 
     function maybeNotify() {
-      setSettings((prev) => {
-        const dueAt = prev.lastNotifiedAt + prev.intervalMinutes * 60 * 1000;
-        if (Date.now() < dueAt) return prev;
+      const current = settingsRef.current;
+      const dueAt = current.lastNotifiedAt + current.intervalMinutes * 60 * 1000;
+      if (Date.now() < dueAt) return;
 
-        const title = "Time to review your words";
-        const names = starredWords.map((w) => w.textA);
-        const body = buildReminderBody(names);
+      const title = "Time to review your words";
+      const names = starredWords.map((w) => w.textA);
+      const body = buildReminderBody(names);
 
-        if (isAppForeground()) {
-          onReminderDue(title, body);
-        } else {
-          void showOsNotification(title, body);
-        }
+      if (isAppForeground()) {
+        onReminderDue(title, body);
+      } else {
+        void showOsNotification(title, body);
+      }
 
-        const next = { ...prev, lastNotifiedAt: Date.now() };
-        saveReminderSettings(next);
-        return next;
-      });
+      const next = { ...current, lastNotifiedAt: Date.now() };
+      saveReminderSettings(next);
+      settingsRef.current = next;
+      setSettings(next);
     }
 
     const pollMs = Math.min(
