@@ -84,11 +84,11 @@ export default function WordList({
                   width: "100%",
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className={`${ROW_GRID} items-center px-4 py-2 text-sm ${
+                className={`${ROW_GRID} items-start px-4 py-2 text-sm ${
                   index > 0 ? "border-t border-zinc-200 dark:border-zinc-800" : ""
                 }`}
               >
-                <span className="flex items-center gap-2">
+                <span className="flex flex-wrap items-start gap-2">
                   {word.level && (
                     <span className="rounded bg-blue-100 px-1 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                       {word.level}
@@ -109,7 +109,7 @@ export default function WordList({
                 <button
                   type="button"
                   onClick={() => onToggleReveal(word.id)}
-                  className="flex w-fit cursor-pointer items-center gap-2 rounded px-1 text-left"
+                  className="flex w-fit flex-wrap cursor-pointer items-start gap-2 rounded px-1 text-left"
                   aria-label={
                     isRevealed ? "Hide translation" : "Show translation"
                   }
