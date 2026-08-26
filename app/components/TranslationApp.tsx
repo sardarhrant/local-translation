@@ -17,6 +17,7 @@ import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import EditWordModal, { type WordEdits } from "./EditWordModal";
 import InstallPrompt from "./InstallPrompt";
 import LanguagePairSelector from "./LanguagePairSelector";
+import MatchGame from "./MatchGame";
 import ReminderListModal from "./ReminderListModal";
 import ReminderSettingsPanel from "./ReminderSettings";
 import ThemeToggle from "./ThemeToggle";
@@ -36,6 +37,7 @@ export default function TranslationApp() {
   const [wordToDelete, setWordToDelete] = useState<WordPair | null>(null);
   const [wordToEdit, setWordToEdit] = useState<WordPair | null>(null);
   const [showReminderList, setShowReminderList] = useState(false);
+  const [showGame, setShowGame] = useState(false);
   const [toast, setToast] = useState<{ title: string; body: string } | null>(
     null,
   );
@@ -241,6 +243,14 @@ export default function TranslationApp() {
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={() => setShowGame(true)}
+          disabled={pairWords.length < 2}
+          className="w-fit rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          🎮 Practice
+        </button>
       </div>
 
       {loading ? (
@@ -295,6 +305,14 @@ export default function TranslationApp() {
           targetLabel={getLanguageName(wordToEdit.langB)}
           onSave={saveEdit}
           onCancel={cancelEdit}
+        />
+      )}
+
+      {showGame && (
+        <MatchGame
+          words={pairWords}
+          sourceLang={sourceLang}
+          onClose={() => setShowGame(false)}
         />
       )}
 
