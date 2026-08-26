@@ -18,7 +18,10 @@ export default function Toast({ title, body, onDismiss, onClick }: ToastProps) {
   }, [onDismiss]);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
+    <div
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4"
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+    >
       <div
         role="status"
         className="animate-toast-in pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border border-zinc-300 bg-white p-4 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
