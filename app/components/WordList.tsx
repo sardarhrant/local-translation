@@ -96,7 +96,7 @@ export default function WordList({
                 </span>
                 {word.description && (
                   <span
-                    className="text-xs text-zinc-500 transition-[filter] duration-150 dark:text-zinc-400"
+                    className="rounded-[4px] border border-zinc-200 px-2 py-1 text-xs text-zinc-500 transition-[filter] duration-150 dark:border-zinc-700 dark:text-zinc-400"
                     style={{ filter: isRevealed ? "none" : "blur(6px)" }}
                   >
                     {word.description}
