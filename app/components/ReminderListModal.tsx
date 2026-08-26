@@ -58,24 +58,22 @@ export default function ReminderListModal({
           </button>
         </div>
 
-        <div className="overflow-y-auto">
-          {words.length === 0 ? (
-            <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
-              No words or phrases starred yet. Star the ☆ next to a word in
-              the list to add it here.
-            </p>
-          ) : (
-            <WordList
-              words={words}
-              sourceLang={null}
-              revealed={revealed}
-              onToggleReveal={onToggleReveal}
-              onToggleRemind={onToggleRemind}
-              onRequestEdit={onRequestEdit}
-              onRequestDelete={onRequestDelete}
-            />
-          )}
-        </div>
+        {words.length === 0 ? (
+          <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            No words or phrases starred yet. Star the ☆ next to a word in
+            the list to add it here.
+          </p>
+        ) : (
+          <WordList
+            words={words}
+            sourceLang={null}
+            revealed={revealed}
+            onToggleReveal={onToggleReveal}
+            onToggleRemind={onToggleRemind}
+            onRequestEdit={onRequestEdit}
+            onRequestDelete={onRequestDelete}
+          />
+        )}
       </div>
     </div>
   );
