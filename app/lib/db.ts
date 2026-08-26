@@ -4,6 +4,36 @@ const DB_NAME = "translations-db";
 const DB_VERSION = 1;
 const STORE_NAME = "words";
 
+interface LegacyWordPair {
+  id: number;
+  en: string;
+  ru: string;
+  isIdiom: boolean;
+  remindMe: boolean;
+  createdAt: number;
+}
+
+function isLegacyRecord(raw: unknown): raw is LegacyWordPair {
+  const record = raw as Partial<LegacyWordPair & WordPair>;
+  return typeof record.en === "string" && typeof record.langA !== "string";
+}
+
+function normalizeRecord(raw: unknown): WordPair {
+  if (isLegacyRecord(raw)) {
+    return {
+      id: raw.id,
+      langA: "en",
+      langB: "ru",
+      textA: raw.en,
+      textB: raw.ru,
+      isIdiom: raw.isIdiom,
+      remindMe: raw.remindMe,
+      createdAt: raw.createdAt,
+    };
+  }
+  return raw as WordPair;
+}
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -25,12 +55,35 @@ function openDB(): Promise<IDBDatabase> {
 
 export async function getAllWords(): Promise<WordPair[]> {
   const db = await openDB();
-  return new Promise((resolve, reject) => {
+  const raw = await new Promise<unknown[]>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly");
     const request = tx.objectStore(STORE_NAME).getAll();
-    request.onsuccess = () => resolve(request.result as WordPair[]);
+    request.onsuccess = () => resolve(request.result as unknown[]);
     request.onerror = () => reject(request.error);
   });
+
+  const legacyOnes = raw.filter(isLegacyRecord);
+  if (legacyOnes.length > 0) {
+    void persistMigratedRecords(legacyOnes.map(normalizeRecord));
+  }
+
+  return raw.map(normalizeRecord);
+}
+
+async function persistMigratedRecords(records: WordPair[]): Promise<void> {
+  try {
+    const db = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      for (const record of records) store.put(record);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // Best-effort: if this fails, the same records get migrated again on
+    // the next load — harmless since normalizeRecord is idempotent.
+  }
 }
 
 export async function addWord(word: NewWordPair): Promise<WordPair> {

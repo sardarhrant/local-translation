@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { Direction } from "@/app/lib/types";
 
 interface AddWordFormProps {
-  direction: Direction;
-  onAdd: (en: string, ru: string, isIdiom: boolean) => void;
+  sourceLabel: string;
+  targetLabel: string;
+  onAdd: (sourceText: string, targetText: string, isIdiom: boolean) => void;
 }
 
-export default function AddWordForm({ direction, onAdd }: AddWordFormProps) {
+export default function AddWordForm({
+  sourceLabel,
+  targetLabel,
+  onAdd,
+}: AddWordFormProps) {
   const [sourceValue, setSourceValue] = useState("");
   const [targetValue, setTargetValue] = useState("");
   const [isIdiom, setIsIdiom] = useState(false);
-
-  const sourceLabel = direction === "en-ru" ? "English" : "Russian";
-  const targetLabel = direction === "en-ru" ? "Russian" : "English";
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -22,11 +23,7 @@ export default function AddWordForm({ direction, onAdd }: AddWordFormProps) {
     const target = targetValue.trim();
     if (!source || !target) return;
 
-    if (direction === "en-ru") {
-      onAdd(source, target, isIdiom);
-    } else {
-      onAdd(target, source, isIdiom);
-    }
+    onAdd(source, target, isIdiom);
 
     setSourceValue("");
     setTargetValue("");

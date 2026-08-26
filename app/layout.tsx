@@ -6,11 +6,10 @@ import "./globals.css";
 const THEME_INIT_SCRIPT = `
 (function () {
   try {
-    var mode = localStorage.getItem("translations:theme") || "system";
-    var isDark =
-      mode === "dark" ||
-      (mode === "system" &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var stored = localStorage.getItem("translations:theme");
+    var isDark = stored
+      ? stored === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
     document.documentElement.classList.toggle("dark", isDark);
   } catch (e) {}
 })();

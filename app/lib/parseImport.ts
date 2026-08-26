@@ -15,7 +15,8 @@ export interface ParseImportResult {
  * " - ", " – ", ";" or "," as the separator between the two columns (in that
  * priority order), since that covers copy-pasting from a spreadsheet export
  * as well as plain "word - translation" lists. The caller decides which
- * column is English and which is Russian based on the selected direction.
+ * column is the source language and which is the target based on the
+ * currently selected language pair.
  */
 export function parseImportText(text: string): ParseImportResult {
   const lines: ImportedLine[] = [];

@@ -45,7 +45,7 @@ export default function ConfirmDeleteModal({
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           Are you sure you want to delete{" "}
           <span className="font-medium text-zinc-900 dark:text-zinc-100">
-            {word.en} — {word.ru}
+            {word.textA} — {word.textB}
           </span>{" "}
           from the app?
         </p>

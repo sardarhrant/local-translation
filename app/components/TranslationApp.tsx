@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Direction, WordPair } from "@/app/lib/types";
+import { belongsToPair, type WordPair } from "@/app/lib/types";
+import { getLanguageName } from "@/app/lib/languages";
 import {
   addWord,
   addWordsBulk,
@@ -15,6 +16,7 @@ import BackupPanel from "./BackupPanel";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import ImportPanel from "./ImportPanel";
 import InstallPrompt from "./InstallPrompt";
+import LanguagePairSelector from "./LanguagePairSelector";
 import ReminderListModal from "./ReminderListModal";
 import ReminderSettingsPanel from "./ReminderSettings";
 import ThemeToggle from "./ThemeToggle";
@@ -26,7 +28,8 @@ type TypeFilter = "all" | "idioms" | "starred";
 export default function TranslationApp() {
   const [words, setWords] = useState<WordPair[]>([]);
   const [loading, setLoading] = useState(true);
-  const [direction, setDirection] = useState<Direction>("en-ru");
+  const [sourceLang, setSourceLang] = useState("en");
+  const [targetLang, setTargetLang] = useState("ru");
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
@@ -48,20 +51,50 @@ export default function TranslationApp() {
     }
   }, []);
 
-  function toggleDirection() {
-    const next: Direction = direction === "en-ru" ? "ru-en" : "en-ru";
-    setDirection(next);
+  function swapLanguages() {
+    setSourceLang(targetLang);
+    setTargetLang(sourceLang);
     setRevealed(new Set());
   }
 
-  async function handleAdd(en: string, ru: string, isIdiom: boolean) {
-    const word = await addWord({ en, ru, isIdiom, remindMe: false });
+  function changeSourceLang(lang: string) {
+    setSourceLang(lang);
+    setRevealed(new Set());
+  }
+
+  function changeTargetLang(lang: string) {
+    setTargetLang(lang);
+    setRevealed(new Set());
+  }
+
+  async function handleAdd(
+    sourceText: string,
+    targetText: string,
+    isIdiom: boolean,
+  ) {
+    const word = await addWord({
+      langA: sourceLang,
+      langB: targetLang,
+      textA: sourceText,
+      textB: targetText,
+      isIdiom,
+      remindMe: false,
+    });
     setWords((prev) => [word, ...prev]);
   }
 
-  async function handleImport(pairs: { en: string; ru: string }[]) {
+  async function handleImport(
+    pairs: { sourceText: string; targetText: string }[],
+  ) {
     await addWordsBulk(
-      pairs.map((pair) => ({ ...pair, isIdiom: false, remindMe: false })),
+      pairs.map(({ sourceText, targetText }) => ({
+        langA: sourceLang,
+        langB: targetLang,
+        textA: sourceText,
+        textB: targetText,
+        isIdiom: false,
+        remindMe: false,
+      })),
     );
     const loaded = await getAllWords();
     setWords((prev) => {
@@ -73,8 +106,10 @@ export default function TranslationApp() {
 
   async function handleBackupImport(
     entries: {
-      en: string;
-      ru: string;
+      langA: string;
+      langB: string;
+      textA: string;
+      textB: string;
       isIdiom: boolean;
       remindMe: boolean;
     }[],
@@ -127,45 +162,65 @@ export default function TranslationApp() {
     });
   }
 
+  const pairWords = useMemo(
+    () => words.filter((w) => belongsToPair(w, sourceLang, targetLang)),
+    [words, sourceLang, targetLang],
+  );
+
   const filteredWords = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return words.filter((w) => {
+    return pairWords.filter((w) => {
       if (typeFilter === "idioms" && !w.isIdiom) return false;
       if (typeFilter === "starred" && !w.remindMe) return false;
       if (!query) return true;
       return (
-        w.en.toLowerCase().includes(query) || w.ru.toLowerCase().includes(query)
+        w.textA.toLowerCase().includes(query) ||
+        w.textB.toLowerCase().includes(query)
       );
     });
-  }, [words, search, typeFilter]);
+  }, [pairWords, search, typeFilter]);
 
   const starredWords = useMemo(
     () => words.filter((w) => w.remindMe),
     [words],
   );
 
+  const sourceLabel = getLanguageName(sourceLang);
+  const targetLabel = getLanguageName(targetLang);
+
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 sm:px-8">
-      <header className="flex items-center justify-between gap-4">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-10 sm:px-8">
+      <header className="flex flex-col gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">
           Translations
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!loading && <ThemeToggle />}
-          <button
-            type="button"
-            onClick={toggleDirection}
-            className="rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-          >
-            {direction === "en-ru" ? "English → Russian" : "Russian → English"}
-          </button>
+          <LanguagePairSelector
+            sourceLang={sourceLang}
+            targetLang={targetLang}
+            onChangeSource={changeSourceLang}
+            onChangeTarget={changeTargetLang}
+            onSwap={swapLanguages}
+          />
         </div>
       </header>
 
       {!loading && <InstallPrompt />}
 
-      <AddWordForm direction={direction} onAdd={handleAdd} />
-      <ImportPanel direction={direction} onImport={handleImport} />
+      <AddWordForm
+        sourceLabel={sourceLabel}
+        targetLabel={targetLabel}
+        onAdd={handleAdd}
+      />
+      <ImportPanel
+        sourceLang={sourceLang}
+        targetLang={targetLang}
+        sourceLabel={sourceLabel}
+        targetLabel={targetLabel}
+        existingWords={pairWords}
+        onImport={handleImport}
+      />
       <BackupPanel words={words} onImport={handleBackupImport} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -207,13 +262,14 @@ export default function TranslationApp() {
         <>
           <ReminderSettingsPanel
             starredWords={starredWords}
-            direction={direction}
             onOpenReminderList={() => setShowReminderList(true)}
             onReminderDue={handleReminderDue}
           />
           <WordList
             words={filteredWords}
-            direction={direction}
+            sourceLang={sourceLang}
+            sourceLabel={sourceLabel}
+            targetLabel={targetLabel}
             revealed={revealed}
             onToggleReveal={toggleReveal}
             onToggleRemind={handleToggleRemind}
@@ -225,7 +281,6 @@ export default function TranslationApp() {
       {showReminderList && (
         <ReminderListModal
           words={starredWords}
-          direction={direction}
           revealed={revealed}
           onToggleReveal={toggleReveal}
           onToggleRemind={handleToggleRemind}

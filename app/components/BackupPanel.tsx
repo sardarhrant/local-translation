@@ -2,10 +2,13 @@
 
 import { useRef, useState } from "react";
 import type { WordPair } from "@/app/lib/types";
+import { wordDedupeKey, existingDedupeKeys } from "@/app/lib/dedupe";
 
 interface BackupEntry {
-  en: string;
-  ru: string;
+  langA: string;
+  langB: string;
+  textA: string;
+  textB: string;
   isIdiom: boolean;
   remindMe: boolean;
 }
@@ -43,11 +46,13 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
 
   function handleExport() {
     const payload: BackupFile = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
-      words: words.map(({ en, ru, isIdiom, remindMe }) => ({
-        en,
-        ru,
+      words: words.map(({ langA, langB, textA, textB, isIdiom, remindMe }) => ({
+        langA,
+        langB,
+        textA,
+        textB,
         isIdiom,
         remindMe,
       })),
@@ -77,23 +82,45 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
       return;
     }
 
-    const existingKeys = new Set(
-      words.map((w) => `${w.en.trim().toLowerCase()}|${w.ru.trim().toLowerCase()}`),
-    );
-
+    const existingKeys = existingDedupeKeys(words);
     const toImport: BackupEntry[] = [];
     let skipped = 0;
 
     for (const raw of entries) {
-      const entry = raw as Partial<BackupEntry> | null;
-      const en = typeof entry?.en === "string" ? entry.en.trim() : "";
-      const ru = typeof entry?.ru === "string" ? entry.ru.trim() : "";
-      if (!en || !ru) {
+      const entry = raw as Record<string, unknown> | null;
+      // Support both the current {langA, langB, textA, textB} shape and the
+      // older {en, ru} backup format from before multi-language support.
+      const langA =
+        typeof entry?.langA === "string"
+          ? entry.langA
+          : typeof entry?.en === "string"
+            ? "en"
+            : "";
+      const langB =
+        typeof entry?.langB === "string"
+          ? entry.langB
+          : typeof entry?.ru === "string"
+            ? "ru"
+            : "";
+      const textA =
+        typeof entry?.textA === "string"
+          ? entry.textA.trim()
+          : typeof entry?.en === "string"
+            ? entry.en.trim()
+            : "";
+      const textB =
+        typeof entry?.textB === "string"
+          ? entry.textB.trim()
+          : typeof entry?.ru === "string"
+            ? entry.ru.trim()
+            : "";
+
+      if (!langA || !langB || !textA || !textB) {
         skipped++;
         continue;
       }
 
-      const key = `${en.toLowerCase()}|${ru.toLowerCase()}`;
+      const key = wordDedupeKey(langA, textA, langB, textB);
       if (existingKeys.has(key)) {
         skipped++;
         continue;
@@ -101,8 +128,10 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
 
       existingKeys.add(key);
       toImport.push({
-        en,
-        ru,
+        langA,
+        langB,
+        textA,
+        textB,
         isIdiom: entry?.isIdiom === true,
         remindMe: entry?.remindMe === true,
       });
@@ -125,9 +154,9 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
       {open && (
         <div className="flex flex-col gap-3 border-t border-zinc-300 px-4 py-3 dark:border-zinc-700">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Export your whole word list as a file you can keep as a backup or
-            bring into another browser. Importing skips anything that&apos;s
-            already in your list.
+            Export your whole word list (every language pair) as a file you
+            can keep as a backup or bring into another browser. Importing
+            skips anything that&apos;s already in your list.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <button

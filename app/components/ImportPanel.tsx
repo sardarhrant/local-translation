@@ -1,34 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import type { Direction } from "@/app/lib/types";
+import type { WordPair } from "@/app/lib/types";
 import { parseImportText } from "@/app/lib/parseImport";
+import { wordDedupeKey, existingDedupeKeys } from "@/app/lib/dedupe";
 
 interface ImportPanelProps {
-  direction: Direction;
-  onImport: (pairs: { en: string; ru: string }[]) => void;
+  sourceLang: string;
+  targetLang: string;
+  sourceLabel: string;
+  targetLabel: string;
+  existingWords: WordPair[];
+  onImport: (pairs: { sourceText: string; targetText: string }[]) => void;
 }
 
-export default function ImportPanel({ direction, onImport }: ImportPanelProps) {
+export default function ImportPanel({
+  sourceLang,
+  targetLang,
+  sourceLabel,
+  targetLabel,
+  existingWords,
+  onImport,
+}: ImportPanelProps) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const [result, setResult] = useState<{ added: number; skipped: number } | null>(
-    null,
-  );
-
-  const sourceLabel = direction === "en-ru" ? "English" : "Russian";
-  const targetLabel = direction === "en-ru" ? "Russian" : "English";
+  const [result, setResult] = useState<{
+    added: number;
+    skipped: number;
+  } | null>(null);
 
   function handleImport() {
-    const { lines, skipped } = parseImportText(text);
-    const pairs = lines.map(({ source, target }) =>
-      direction === "en-ru"
-        ? { en: source, ru: target }
-        : { en: target, ru: source },
-    );
+    const { lines, skipped: parseSkipped } = parseImportText(text);
+    const existingKeys = existingDedupeKeys(existingWords);
+    const pairs: { sourceText: string; targetText: string }[] = [];
+    let duplicateSkipped = 0;
+
+    for (const { source, target } of lines) {
+      const key = wordDedupeKey(sourceLang, source, targetLang, target);
+      if (existingKeys.has(key)) {
+        duplicateSkipped++;
+        continue;
+      }
+      existingKeys.add(key);
+      pairs.push({ sourceText: source, targetText: target });
+    }
 
     if (pairs.length > 0) onImport(pairs);
-    setResult({ added: pairs.length, skipped });
+    setResult({ added: pairs.length, skipped: parseSkipped + duplicateSkipped });
     setText("");
   }
 
@@ -47,7 +65,7 @@ export default function ImportPanel({ direction, onImport }: ImportPanelProps) {
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             Paste one word pair per line, {sourceLabel} first then{" "}
             {targetLabel}, separated by a tab, comma, semicolon or
-            &quot; - &quot;.
+            &quot; - &quot;. Duplicates are skipped automatically.
           </p>
           <textarea
             value={text}

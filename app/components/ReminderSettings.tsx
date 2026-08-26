@@ -6,7 +6,7 @@ import {
   saveReminderSettings,
   type ReminderSettings,
 } from "@/app/lib/reminder";
-import type { Direction, WordPair } from "@/app/lib/types";
+import type { WordPair } from "@/app/lib/types";
 
 const MAX_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -72,14 +72,12 @@ async function showOsNotification(title: string, body: string) {
 
 interface ReminderSettingsPanelProps {
   starredWords: WordPair[];
-  direction: Direction;
   onOpenReminderList: () => void;
   onReminderDue: (title: string, body: string) => void;
 }
 
 export default function ReminderSettingsPanel({
   starredWords,
-  direction,
   onOpenReminderList,
   onReminderDue,
 }: ReminderSettingsPanelProps) {
@@ -101,9 +99,7 @@ export default function ReminderSettingsPanel({
         if (Date.now() < dueAt) return prev;
 
         const title = "Time to review your words";
-        const names = starredWords.map((w) =>
-          direction === "en-ru" ? w.en : w.ru,
-        );
+        const names = starredWords.map((w) => w.textA);
         const body = buildReminderBody(names);
 
         if (isAppForeground()) {
@@ -132,7 +128,6 @@ export default function ReminderSettingsPanel({
     settings.enabled,
     permission,
     starredWords,
-    direction,
     settings.intervalMinutes,
     onReminderDue,
   ]);

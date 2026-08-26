@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Direction, WordPair } from "@/app/lib/types";
+import type { WordPair } from "@/app/lib/types";
 import WordList from "./WordList";
 
 interface ReminderListModalProps {
   words: WordPair[];
-  direction: Direction;
   revealed: Set<number>;
   onToggleReveal: (id: number) => void;
   onToggleRemind: (word: WordPair) => void;
@@ -16,7 +15,6 @@ interface ReminderListModalProps {
 
 export default function ReminderListModal({
   words,
-  direction,
   revealed,
   onToggleReveal,
   onToggleRemind,
@@ -67,7 +65,7 @@ export default function ReminderListModal({
           ) : (
             <WordList
               words={words}
-              direction={direction}
+              sourceLang={null}
               revealed={revealed}
               onToggleReveal={onToggleReveal}
               onToggleRemind={onToggleRemind}
