@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getDisplayText, type WordPair } from "@/app/lib/types";
 import { shuffle } from "@/app/lib/shuffle";
 
-const ROUND_SIZE = 10;
+const ROUND_SIZE = 5;
 const TAP_MOVE_THRESHOLD = 6;
 
 interface MatchGameProps {
