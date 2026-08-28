@@ -38,6 +38,8 @@ export default function TranslationApp() {
   const [levelFilter, setLevelFilter] = useState("all");
   const [wordToDelete, setWordToDelete] = useState<WordPair | null>(null);
   const [wordToEdit, setWordToEdit] = useState<WordPair | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [showReminderList, setShowReminderList] = useState(false);
   const [showGame, setShowGame] = useState(false);
   const [toast, setToast] = useState<{ title: string; body: string } | null>(
@@ -219,64 +221,90 @@ export default function TranslationApp() {
 
       {!loading && <InstallPrompt />}
 
-      <AddWordForm
-        sourceLabel={sourceLabel}
-        targetLabel={targetLabel}
-        onAdd={handleAdd}
-      />
-      <BackupPanel words={words} onImport={handleBackupImport} />
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search words..."
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
-        />
-        <div className="flex w-fit rounded-lg border border-zinc-300 p-0.5 text-sm dark:border-zinc-700">
-          {(
-            [
-              { value: "all", label: "All" },
-              { value: "idioms", label: "Idioms" },
-              { value: "starred", label: "Starred" },
-            ] as const
-          ).map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setTypeFilter(option.value)}
-              className={`rounded-md px-3 py-1 font-medium transition-colors ${
-                typeFilter === option.value
-                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        <select
-          value={levelFilter}
-          onChange={(e) => setLevelFilter(e.target.value)}
-          aria-label="Filter by level"
-          className="w-fit rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
-        >
-          <option value="all">All levels</option>
-          <option value="none">No level</option>
-          {CEFR_LEVELS.map((cefrLevel) => (
-            <option key={cefrLevel} value={cefrLevel}>
-              {cefrLevel}
-            </option>
-          ))}
-        </select>
+      <div className="rounded-lg border border-zinc-300 dark:border-zinc-700">
         <button
           type="button"
-          onClick={() => setShowGame(true)}
-          disabled={pairWords.length < 2}
-          className="w-fit rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          onClick={() => setAddOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
         >
-          🎮 Practice
+          <span>Add word</span>
+          <span className="text-zinc-500">{addOpen ? "−" : "+"}</span>
         </button>
+        {addOpen && (
+          <div className="flex flex-col gap-4 border-t border-zinc-300 px-4 py-3 dark:border-zinc-700">
+            <AddWordForm
+              sourceLabel={sourceLabel}
+              targetLabel={targetLabel}
+              onAdd={handleAdd}
+            />
+            <BackupPanel words={words} onImport={handleBackupImport} />
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-zinc-300 dark:border-zinc-700">
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+        >
+          <span>Search & filters</span>
+          <span className="text-zinc-500">{filtersOpen ? "−" : "+"}</span>
+        </button>
+        {filtersOpen && (
+          <div className="flex flex-col gap-3 border-t border-zinc-300 px-4 py-3 dark:border-zinc-700 sm:flex-row sm:items-center sm:flex-wrap">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search words..."
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+            />
+            <div className="flex w-fit rounded-lg border border-zinc-300 p-0.5 text-sm dark:border-zinc-700">
+              {(
+                [
+                  { value: "all", label: "All" },
+                  { value: "idioms", label: "Idioms" },
+                  { value: "starred", label: "Starred" },
+                ] as const
+              ).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setTypeFilter(option.value)}
+                  className={`rounded-md px-3 py-1 font-medium transition-colors ${
+                    typeFilter === option.value
+                      ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                      : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <select
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+              aria-label="Filter by level"
+              className="w-fit rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+            >
+              <option value="all">All levels</option>
+              <option value="none">No level</option>
+              {CEFR_LEVELS.map((cefrLevel) => (
+                <option key={cefrLevel} value={cefrLevel}>
+                  {cefrLevel}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setShowGame(true)}
+              disabled={pairWords.length < 2}
+              className="w-fit rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            >
+              🎮 Practice
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (

@@ -4,8 +4,9 @@ import { useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { getDisplayText, type WordPair } from "@/app/lib/types";
 import { getLanguageName } from "@/app/lib/languages";
+import RowActionsMenu from "./RowActionsMenu";
 
-const ROW_GRID = "grid grid-cols-[1fr_1fr_auto_auto_auto]";
+const ROW_GRID = "grid grid-cols-[1fr_1fr_auto_auto]";
 
 interface WordListProps {
   words: WordPair[];
@@ -58,11 +59,10 @@ export default function WordList({
       >
         <span>{crossPair ? "Word" : sourceLabel}</span>
         <span>{crossPair ? "Translation" : targetLabel}</span>
-        <span className="w-5" />
-        <span className="w-5" />
+        <span className="w-7" />
         <span className="w-6" />
       </div>
-      <div ref={parentRef} className="max-h-[28rem] overflow-y-auto">
+      <div ref={parentRef} className="max-h-[36rem] overflow-y-auto">
         <ul
           style={{ height: virtualizer.getTotalSize(), position: "relative" }}
         >
@@ -86,18 +86,14 @@ export default function WordList({
                 }}
                 className={`${ROW_GRID} items-start px-4 py-2 text-sm ${
                   index > 0 ? "border-t border-zinc-200 dark:border-zinc-800" : ""
-                }`}
+                } ${word.level ? "pt-6" : ""}`}
               >
-                <span
-                  className={`relative flex flex-wrap items-start gap-2 ${
-                    word.level ? "pt-4" : ""
-                  }`}
-                >
-                  {word.level && (
-                    <span className="absolute left-0 top-0 rounded bg-blue-100 px-1 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                      {word.level}
-                    </span>
-                  )}
+                {word.level && (
+                  <span className="absolute left-1 top-1 rounded bg-blue-100 px-1 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                    {word.level}
+                  </span>
+                )}
+                <span className="flex flex-wrap items-start gap-2">
                   {display.sourceText}
                   {crossPair && (
                     <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-medium uppercase text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
@@ -139,7 +135,7 @@ export default function WordList({
                       : "Add to reminder list"
                   }
                   aria-pressed={word.remindMe}
-                  className={`w-5 text-lg leading-none transition-colors ${
+                  className={`w-7 text-2xl leading-none transition-colors ${
                     word.remindMe
                       ? "text-amber-500 hover:text-amber-600"
                       : "text-zinc-300 hover:text-zinc-400 dark:text-zinc-600 dark:hover:text-zinc-500"
@@ -147,22 +143,10 @@ export default function WordList({
                 >
                   {word.remindMe ? "★" : "☆"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onRequestEdit(word)}
-                  aria-label="Edit word"
-                  className="w-5 text-base leading-none text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-200"
-                >
-                  ✎
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onRequestDelete(word)}
-                  aria-label="Delete word"
-                  className="w-6 text-2xl leading-none text-red-500 transition-colors hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
-                >
-                  ×
-                </button>
+                <RowActionsMenu
+                  onEdit={() => onRequestEdit(word)}
+                  onDelete={() => onRequestDelete(word)}
+                />
                 {word.description && (
                   <button
                     type="button"
