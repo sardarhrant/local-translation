@@ -42,6 +42,11 @@ export default function WordList({
     getScrollElement: () => parentRef.current,
     estimateSize: () => 52,
     overscan: 8,
+    // Key measurements by the word's own id, not its array index. Search,
+    // filtering, and imports reorder the underlying array; without this,
+    // a row can reuse another row's stale cached height from a previous
+    // index, which misplaces it and overlaps the next row.
+    getItemKey: (index) => words[index].id,
   });
 
   if (words.length === 0) {
