@@ -74,12 +74,15 @@ interface ReminderSettingsPanelProps {
   starredWords: WordPair[];
   onOpenReminderList: () => void;
   onReminderDue: (title: string, body: string) => void;
+  /** Drop the own border/rounding when nested inside a shared container. */
+  bare?: boolean;
 }
 
 export default function ReminderSettingsPanel({
   starredWords,
   onOpenReminderList,
   onReminderDue,
+  bare = false,
 }: ReminderSettingsPanelProps) {
   const pendingCount = starredWords.length;
   const [open, setOpen] = useState(false);
@@ -100,7 +103,8 @@ export default function ReminderSettingsPanel({
 
     function maybeNotify() {
       const current = settingsRef.current;
-      const dueAt = current.lastNotifiedAt + current.intervalMinutes * 60 * 1000;
+      const dueAt =
+        current.lastNotifiedAt + current.intervalMinutes * 60 * 1000;
       if (Date.now() < dueAt) return;
 
       const title = "Time to review your words";
@@ -165,7 +169,11 @@ export default function ReminderSettingsPanel({
   const supported = typeof window !== "undefined" && "Notification" in window;
 
   return (
-    <div className="rounded-lg border border-zinc-300 dark:border-zinc-700">
+    <div
+      className={
+        bare ? "" : "rounded-lg border border-zinc-300 dark:border-zinc-700"
+      }
+    >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

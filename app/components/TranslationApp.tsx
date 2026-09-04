@@ -40,6 +40,7 @@ export default function TranslationApp() {
   const [wordToEdit, setWordToEdit] = useState<WordPair | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [panelsOpen, setPanelsOpen] = useState(false);
   const [showReminderList, setShowReminderList] = useState(false);
   const [showGame, setShowGame] = useState(false);
   const [toast, setToast] = useState<{ title: string; body: string } | null>(
@@ -115,14 +116,14 @@ export default function TranslationApp() {
     });
   }
 
-  async function handleToggleRemind(word: WordPair) {
+  const handleToggleRemind = useCallback(async (word: WordPair) => {
     const updated = await updateWord(word.id, { remindMe: !word.remindMe });
     setWords((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
-  }
+  }, []);
 
-  function requestEdit(word: WordPair) {
+  const requestEdit = useCallback((word: WordPair) => {
     setWordToEdit(word);
-  }
+  }, []);
 
   function cancelEdit() {
     setWordToEdit(null);
@@ -134,9 +135,9 @@ export default function TranslationApp() {
     setWordToEdit(null);
   }
 
-  function requestDelete(word: WordPair) {
+  const requestDelete = useCallback((word: WordPair) => {
     setWordToDelete(word);
-  }
+  }, []);
 
   function cancelDelete() {
     setWordToDelete(null);
@@ -159,14 +160,14 @@ export default function TranslationApp() {
     setToast({ title, body });
   }, []);
 
-  function toggleReveal(id: number) {
+  const toggleReveal = useCallback((id: number) => {
     setRevealed((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }
+  }, []);
 
   const pairWords = useMemo(
     () => words.filter((w) => belongsToPair(w, sourceLang, targetLang)),
@@ -193,10 +194,7 @@ export default function TranslationApp() {
     });
   }, [pairWords, search, typeFilter, levelFilter]);
 
-  const starredWords = useMemo(
-    () => words.filter((w) => w.remindMe),
-    [words],
-  );
+  const starredWords = useMemo(() => words.filter((w) => w.remindMe), [words]);
 
   const sourceLabel = getLanguageName(sourceLang);
   const targetLabel = getLanguageName(targetLang);
@@ -204,11 +202,13 @@ export default function TranslationApp() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-10 sm:px-8">
       <header className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Translations
-        </h1>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Translations
+          </h1>
           {!loading && <ThemeToggle />}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
           <LanguagePairSelector
             sourceLang={sourceLang}
             targetLang={targetLang}
@@ -216,96 +216,115 @@ export default function TranslationApp() {
             onChangeTarget={changeTargetLang}
             onSwap={swapLanguages}
           />
+          <button
+            type="button"
+            onClick={() => setPanelsOpen((o) => !o)}
+            aria-expanded={panelsOpen}
+            className="ml-auto rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          >
+            {panelsOpen ? "Hide options" : "Options"}
+          </button>
         </div>
       </header>
 
       {!loading && <InstallPrompt />}
 
-      <div className="rounded-lg border border-zinc-300 dark:border-zinc-700">
-        <button
-          type="button"
-          onClick={() => setAddOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
-        >
-          <span>Add word</span>
-          <span className="text-zinc-500">{addOpen ? "−" : "+"}</span>
-        </button>
-        {addOpen && (
-          <div className="flex flex-col gap-4 border-t border-zinc-300 px-4 py-3 dark:border-zinc-700">
-            <AddWordForm
-              sourceLabel={sourceLabel}
-              targetLabel={targetLabel}
-              onAdd={handleAdd}
-            />
-            <BackupPanel words={words} onImport={handleBackupImport} />
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-lg border border-zinc-300 dark:border-zinc-700">
-        <button
-          type="button"
-          onClick={() => setFiltersOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
-        >
-          <span>Search & filters</span>
-          <span className="text-zinc-500">{filtersOpen ? "−" : "+"}</span>
-        </button>
-        {filtersOpen && (
-          <div className="flex flex-col gap-3 border-t border-zinc-300 px-4 py-3 dark:border-zinc-700 sm:flex-row sm:items-center sm:flex-wrap">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search words..."
-              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
-            />
-            <div className="flex w-fit rounded-lg border border-zinc-300 p-0.5 text-sm dark:border-zinc-700">
-              {(
-                [
-                  { value: "all", label: "All" },
-                  { value: "idioms", label: "Idioms" },
-                  { value: "starred", label: "Starred" },
-                ] as const
-              ).map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setTypeFilter(option.value)}
-                  className={`rounded-md px-3 py-1 font-medium transition-colors ${
-                    typeFilter === option.value
-                      ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                      : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <select
-              value={levelFilter}
-              onChange={(e) => setLevelFilter(e.target.value)}
-              aria-label="Filter by level"
-              className="w-fit rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
-            >
-              <option value="all">All levels</option>
-              <option value="none">No level</option>
-              {CEFR_LEVELS.map((cefrLevel) => (
-                <option key={cefrLevel} value={cefrLevel}>
-                  {cefrLevel}
-                </option>
-              ))}
-            </select>
+      {panelsOpen && (
+        <div className="divide-y divide-zinc-300 overflow-hidden rounded-lg border border-zinc-300 dark:divide-zinc-700 dark:border-zinc-700">
+          <div>
             <button
               type="button"
-              onClick={() => setShowGame(true)}
-              disabled={pairWords.length < 2}
-              className="w-fit rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              onClick={() => setAddOpen((o) => !o)}
+              className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
             >
-              🎮 Practice
+              <span>Add word</span>
+              <span className="text-zinc-500">{addOpen ? "−" : "+"}</span>
             </button>
+            {addOpen && (
+              <div className="flex flex-col gap-4 border-t border-zinc-300 px-4 py-3 dark:border-zinc-700">
+                <AddWordForm
+                  sourceLabel={sourceLabel}
+                  targetLabel={targetLabel}
+                  onAdd={handleAdd}
+                />
+                <BackupPanel words={words} onImport={handleBackupImport} />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((o) => !o)}
+              className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+            >
+              <span>Search & filters</span>
+              <span className="text-zinc-500">{filtersOpen ? "−" : "+"}</span>
+            </button>
+            {filtersOpen && (
+              <div className="flex flex-col gap-3 border-t border-zinc-300 px-4 py-3 dark:border-zinc-700 sm:flex-row sm:items-center sm:flex-wrap">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search words..."
+                  className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+                />
+                <div className="flex w-fit rounded-lg border border-zinc-300 p-0.5 text-sm dark:border-zinc-700">
+                  {(
+                    [
+                      { value: "all", label: "All" },
+                      { value: "idioms", label: "Idioms" },
+                      { value: "starred", label: "Starred" },
+                    ] as const
+                  ).map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setTypeFilter(option.value)}
+                      className={`rounded-md px-3 py-1 font-medium transition-colors ${
+                        typeFilter === option.value
+                          ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <select
+                  value={levelFilter}
+                  onChange={(e) => setLevelFilter(e.target.value)}
+                  aria-label="Filter by level"
+                  className="w-fit rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+                >
+                  <option value="all">All levels</option>
+                  <option value="none">No level</option>
+                  {CEFR_LEVELS.map((cefrLevel) => (
+                    <option key={cefrLevel} value={cefrLevel}>
+                      {cefrLevel}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowGame(true)}
+                  disabled={pairWords.length < 2}
+                  className="w-fit rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                >
+                  🎮 Practice
+                </button>
+              </div>
+            )}
+          </div>
+
+          <ReminderSettingsPanel
+            bare
+            starredWords={starredWords}
+            onOpenReminderList={() => setShowReminderList(true)}
+            onReminderDue={handleReminderDue}
+          />
+        </div>
+      )}
 
       {loading ? (
         <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
@@ -313,11 +332,6 @@ export default function TranslationApp() {
         </p>
       ) : (
         <>
-          <ReminderSettingsPanel
-            starredWords={starredWords}
-            onOpenReminderList={() => setShowReminderList(true)}
-            onReminderDue={handleReminderDue}
-          />
           <WordList
             words={filteredWords}
             sourceLang={sourceLang}

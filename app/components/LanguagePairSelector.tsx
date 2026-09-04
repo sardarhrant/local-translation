@@ -11,7 +11,7 @@ interface LanguagePairSelectorProps {
 }
 
 const selectClassName =
-  "min-w-[9.5rem] rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium outline-none transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800";
+  "min-w-0 rounded-full border border-zinc-300 bg-white py-3 pl-5 pr-3 text-sm font-medium outline-none transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800";
 
 export default function LanguagePairSelector({
   sourceLang,
@@ -38,7 +38,7 @@ export default function LanguagePairSelector({
         type="button"
         onClick={onSwap}
         aria-label="Swap languages"
-        className="rounded-full border border-zinc-300 px-3 py-2.5 text-base transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+        className="rounded-full px-1.5 py-1 text-base transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900"
       >
         ⇄
       </button>
