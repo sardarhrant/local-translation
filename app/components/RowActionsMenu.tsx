@@ -95,7 +95,7 @@ export default function RowActionsMenu({ onEdit, onDelete }: RowActionsMenuProps
               }}
               className="block w-full px-3 py-2 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
-              ✎ Edit
+              <span className="mr-1.5 text-lg leading-none">✎</span> Edit
             </button>
             <button
               type="button"
@@ -106,7 +106,7 @@ export default function RowActionsMenu({ onEdit, onDelete }: RowActionsMenuProps
               }}
               className="block w-full px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
             >
-              × Delete
+              <span className="mr-1.5 text-xl leading-none">×</span> Delete
             </button>
           </div>,
           document.body,

@@ -235,7 +235,7 @@ export default function TranslationApp() {
             <button
               type="button"
               onClick={() => setAddOpen((o) => !o)}
-              className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+              className="flex w-full items-center justify-between px-4 py-2.5 text-base font-medium"
             >
               <span>Add word</span>
               <span className="text-zinc-500">{addOpen ? "−" : "+"}</span>
@@ -256,7 +256,7 @@ export default function TranslationApp() {
             <button
               type="button"
               onClick={() => setFiltersOpen((o) => !o)}
-              className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+              className="flex w-full items-center justify-between px-4 py-2.5 text-base font-medium"
             >
               <span>Search & filters</span>
               <span className="text-zinc-500">{filtersOpen ? "−" : "+"}</span>

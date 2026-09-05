@@ -177,7 +177,7 @@ export default function ReminderSettingsPanel({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+        className="flex w-full items-center justify-between px-4 py-2.5 text-base font-medium"
       >
         <span>
           Reminders

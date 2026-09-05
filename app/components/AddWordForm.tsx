@@ -77,13 +77,6 @@ export default function AddWordForm({
             className={fieldClassName}
           />
         </label>
-        <button
-          type="submit"
-          disabled={!sourceValue.trim() || !targetValue.trim()}
-          className="h-fit rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        >
-          Add word
-        </button>
       </div>
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-zinc-600 dark:text-zinc-400">
@@ -98,21 +91,19 @@ export default function AddWordForm({
         />
       </label>
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-zinc-600 dark:text-zinc-400">Level</span>
-          <select
-            value={level}
-            onChange={(e) => setLevel(e.target.value)}
-            className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
-          >
-            <option value="">No level</option>
-            {CEFR_LEVELS.map((cefrLevel) => (
-              <option key={cefrLevel} value={cefrLevel}>
-                {cefrLevel}
-              </option>
-            ))}
-          </select>
-        </label>
+        <select
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+          aria-label="Level"
+          className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500"
+        >
+          <option value="">No level</option>
+          {CEFR_LEVELS.map((cefrLevel) => (
+            <option key={cefrLevel} value={cefrLevel}>
+              {cefrLevel}
+            </option>
+          ))}
+        </select>
         <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
           <input
             type="checkbox"
@@ -123,6 +114,13 @@ export default function AddWordForm({
           This is an idiom / phrase
         </label>
       </div>
+      <button
+        type="submit"
+        disabled={!sourceValue.trim() || !targetValue.trim()}
+        className="w-fit rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
+      >
+        Add word
+      </button>
     </form>
   );
 }
