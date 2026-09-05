@@ -1,0 +1,4 @@
+# Copy to .dev.vars (gitignored) for `wrangler pages dev`.
+# In production, set these in the Cloudflare Pages project's environment variables.
+AZURE_SPEECH_KEY=your-azure-speech-subscription-key
+AZURE_SPEECH_REGION=your-azure-region
