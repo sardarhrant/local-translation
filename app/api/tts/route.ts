@@ -1,7 +1,13 @@
 // POST /api/tts — { text, languageCode } -> audio/mpeg
 // Proxies Google Cloud Text-to-Speech; returns the decoded MP3 bytes.
 
-import { getKey, googlePost, missingKeyResponse, upstreamError } from "@/app/lib/google";
+import {
+  base64ToArrayBuffer,
+  getKey,
+  googlePost,
+  missingKeyResponse,
+  upstreamError,
+} from "@/app/lib/google";
 
 interface TtsBody {
   text?: string;
@@ -42,7 +48,7 @@ export async function POST(request: Request) {
     );
     if (!data.audioContent) throw new Error("No audio returned");
 
-    return new Response(Buffer.from(data.audioContent, "base64"), {
+    return new Response(base64ToArrayBuffer(data.audioContent), {
       headers: {
         "Content-Type": "audio/mpeg",
         "Cache-Control": "no-store",

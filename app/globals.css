@@ -35,6 +35,16 @@ body {
   padding-left: env(safe-area-inset-left);
 }
 
+/* Custom chevron for the language selects so its position is controllable
+   (native <select> arrows sit flush to the right edge regardless of padding). */
+.lang-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 14px;
+}
+
 @keyframes toast-in {
   from {
     transform: translateY(-100%);

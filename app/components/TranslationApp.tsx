@@ -206,7 +206,17 @@ export default function TranslationApp() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Translations
           </h1>
-          {!loading && <ThemeToggle />}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPanelsOpen((o) => !o)}
+              aria-expanded={panelsOpen}
+              className="rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+            >
+              {panelsOpen ? "Hide options" : "Options"}
+            </button>
+            {!loading && <ThemeToggle />}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <LanguagePairSelector
@@ -216,14 +226,6 @@ export default function TranslationApp() {
             onChangeTarget={changeTargetLang}
             onSwap={swapLanguages}
           />
-          <button
-            type="button"
-            onClick={() => setPanelsOpen((o) => !o)}
-            aria-expanded={panelsOpen}
-            className="ml-auto rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-          >
-            {panelsOpen ? "Hide options" : "Options"}
-          </button>
         </div>
       </header>
 

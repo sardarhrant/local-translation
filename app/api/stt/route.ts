@@ -2,7 +2,13 @@
 //   -> { text, confidence }
 // Proxies Google Cloud Speech-to-Text.
 
-import { getKey, googlePost, missingKeyResponse, upstreamError } from "@/app/lib/google";
+import {
+  bytesToBase64,
+  getKey,
+  googlePost,
+  missingKeyResponse,
+  upstreamError,
+} from "@/app/lib/google";
 
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // ~5 min of 16kHz mono PCM16
 
@@ -36,7 +42,7 @@ export async function POST(request: Request) {
           languageCode,
           enableAutomaticPunctuation: false,
         },
-        audio: { content: Buffer.from(audio).toString("base64") },
+        audio: { content: bytesToBase64(new Uint8Array(audio)) },
       },
     );
     const alt = data.results?.[0]?.alternatives?.[0];

@@ -11,7 +11,7 @@ interface LanguagePairSelectorProps {
 }
 
 const selectClassName =
-  "min-w-0 rounded-full border border-zinc-300 bg-white py-3 pl-5 pr-3 text-sm font-medium outline-none transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800";
+  "lang-select min-w-0 rounded-full border border-zinc-300 bg-white py-3 pl-5 pr-8 text-sm font-medium outline-none transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800";
 
 export default function LanguagePairSelector({
   sourceLang,
