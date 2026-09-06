@@ -1,9 +1,10 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { getDisplayText, type WordPair } from "@/app/lib/types";
 import { getLanguageName } from "@/app/lib/languages";
+import PronunciationModal from "./PronunciationModal";
 import RowActionsMenu from "./RowActionsMenu";
 
 const ROW_GRID = "grid grid-cols-[1fr_auto_auto_auto] gap-x-3";
@@ -114,6 +115,7 @@ const WordRow = memo(function WordRow({
   onRequestDelete,
 }: WordRowProps) {
   const display = getDisplayText(word, sourceLang);
+  const [practiceOpen, setPracticeOpen] = useState(false);
 
   const shownText = isRevealed ? display.targetText : display.sourceText;
   const shownLang = isRevealed ? display.targetLang : display.sourceLang;
@@ -166,11 +168,18 @@ const WordRow = memo(function WordRow({
       <RowActionsMenu
         onEdit={() => onRequestEdit(word)}
         onDelete={() => onRequestDelete(word)}
+        onPractice={() => setPracticeOpen(true)}
       />
       {word.description && isRevealed && (
         <p className="col-span-full mt-1 w-fit rounded-[4px] border border-zinc-200 px-2 py-1 text-[14px] leading-snug text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
           {word.description}
         </p>
+      )}
+      {practiceOpen && (
+        <PronunciationModal
+          word={word}
+          onClose={() => setPracticeOpen(false)}
+        />
       )}
     </>
   );
