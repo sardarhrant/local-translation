@@ -8,6 +8,37 @@ import RowActionsMenu from "./RowActionsMenu";
 
 const ROW_GRID = "grid grid-cols-[1fr_auto_auto_auto] gap-x-3";
 
+function FullscreenIcon({ exit }: { exit: boolean }) {
+  return (
+    <svg
+      className="h-3.5 w-3.5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {exit ? (
+        <>
+          <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+          <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+          <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+          <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+        </>
+      ) : (
+        <>
+          <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+          <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+          <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+          <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function ArrowIcon({ revealed }: { revealed: boolean }) {
   return (
     <svg
@@ -154,6 +185,12 @@ interface WordListProps {
   sourceLabel?: string;
   targetLabel?: string;
   revealed: Set<number>;
+  /** Full-screen mode: the list occupies a full 100dvh (header row + scroll
+   * area) instead of capping at the default max height. */
+  fill?: boolean;
+  /** When provided, a toggle appears next to the column labels to enter /
+   * leave full-screen mode. */
+  onToggleFill?: () => void;
   onToggleReveal: (id: number) => void;
   onToggleRemind: (word: WordPair) => void;
   onRequestEdit: (word: WordPair) => void;
@@ -166,6 +203,8 @@ export default function WordList({
   sourceLabel,
   targetLabel,
   revealed,
+  fill = false,
+  onToggleFill,
   onToggleReveal,
   onToggleRemind,
   onRequestEdit,
@@ -195,9 +234,17 @@ export default function WordList({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
+    <div
+      className={`overflow-hidden ${
+        fill
+          ? "flex h-[100dvh] flex-col border-b border-zinc-300 dark:border-zinc-700"
+          : "rounded-lg border border-zinc-300 dark:border-zinc-700"
+      }`}
+    >
       <div
-        className={`${ROW_GRID} bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400`}
+        className={`${ROW_GRID} ${
+          fill ? "shrink-0" : ""
+        } bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400`}
       >
         <span>
           {crossPair ? "Word" : sourceLabel}
@@ -208,9 +255,25 @@ export default function WordList({
         </span>
         <span className="w-9" />
         <span className="w-7" />
-        <span className="w-6" />
+        {onToggleFill ? (
+          <button
+            type="button"
+            onClick={onToggleFill}
+            aria-label={fill ? "Exit full screen" : "Full screen list"}
+            className="flex h-5 w-5 items-center justify-center justify-self-end rounded-full border border-zinc-300 text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+          >
+            <FullscreenIcon exit={fill} />
+          </button>
+        ) : (
+          <span className="w-6" />
+        )}
       </div>
-      <div ref={parentRef} className="max-h-[36rem] overflow-y-auto">
+      <div
+        ref={parentRef}
+        className={`overflow-y-auto ${
+          fill ? "min-h-0 flex-1" : "max-h-[36rem]"
+        }`}
+      >
         <ul
           style={{ height: virtualizer.getTotalSize(), position: "relative" }}
         >

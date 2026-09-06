@@ -41,6 +41,13 @@ export default function TranslationApp() {
   const [addOpen, setAddOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [panelsOpen, setPanelsOpen] = useState(false);
+  const [fillList, setFillList] = useState(() => {
+    try {
+      return localStorage.getItem("translations:fillList") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [showReminderList, setShowReminderList] = useState(false);
   const [showGame, setShowGame] = useState(false);
   const [toast, setToast] = useState<{ title: string; body: string } | null>(
@@ -58,6 +65,26 @@ export default function TranslationApp() {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   }, []);
+
+  const setFullscreen = useCallback((value: boolean) => {
+    setFillList(value);
+    try {
+      localStorage.setItem("translations:fillList", value ? "1" : "0");
+    } catch {
+      // ignore storage write failures
+    }
+  }, []);
+
+  // Escape always leaves full-screen mode (a reliable exit even if the
+  // list is empty and its header toggle isn't shown).
+  useEffect(() => {
+    if (!fillList) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setFullscreen(false);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [fillList, setFullscreen]);
 
   function swapLanguages() {
     setSourceLang(targetLang);
@@ -200,56 +227,66 @@ export default function TranslationApp() {
   const targetLabel = getLanguageName(targetLang);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-10 sm:px-8">
-      <header className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Translations
-          </h1>
-          <div className="flex items-center gap-2">
-            {!loading && <ThemeToggle />}
-            <button
-              type="button"
-              onClick={() => setPanelsOpen((o) => !o)}
-              aria-expanded={panelsOpen}
-              aria-label={panelsOpen ? "Hide options" : "Show options"}
-              className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
-                panelsOpen
-                  ? "border-zinc-400 bg-zinc-100 dark:border-zinc-500 dark:bg-zinc-800"
-                  : "border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-              }`}
-            >
-              <svg
-                className={`h-4 w-4 transition-transform ${
-                  panelsOpen ? "rotate-180" : ""
-                }`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.25"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <LanguagePairSelector
-            sourceLang={sourceLang}
-            targetLang={targetLang}
-            onChangeSource={changeSourceLang}
-            onChangeTarget={changeTargetLang}
-            onSwap={swapLanguages}
-          />
-        </div>
-      </header>
+    <div
+      className={
+        fillList
+          ? "mx-auto flex w-full max-w-3xl flex-col"
+          : "mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-10 sm:px-8"
+      }
+    >
+      {!fillList && (
+        <>
+          <header className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Translations
+              </h1>
+              <div className="flex items-center gap-2">
+                {!loading && <ThemeToggle />}
+                <button
+                  type="button"
+                  onClick={() => setPanelsOpen((o) => !o)}
+                  aria-expanded={panelsOpen}
+                  aria-label={panelsOpen ? "Hide options" : "Show options"}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+                    panelsOpen
+                      ? "border-zinc-400 bg-zinc-100 dark:border-zinc-500 dark:bg-zinc-800"
+                      : "border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                  }`}
+                >
+                  <svg
+                    className={`h-4 w-4 transition-transform ${
+                      panelsOpen ? "rotate-180" : ""
+                    }`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.25"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <LanguagePairSelector
+                sourceLang={sourceLang}
+                targetLang={targetLang}
+                onChangeSource={changeSourceLang}
+                onChangeTarget={changeTargetLang}
+                onSwap={swapLanguages}
+              />
+            </div>
+          </header>
 
-      {!loading && <InstallPrompt />}
+          {!loading && <InstallPrompt />}
+        </>
+      )}
 
-      {panelsOpen && (
+      {!fillList && panelsOpen && (
         <div className="divide-y divide-zinc-300 overflow-hidden rounded-lg border border-zinc-300 dark:divide-zinc-700 dark:border-zinc-700">
           <div>
             <button
@@ -353,19 +390,19 @@ export default function TranslationApp() {
           Loading...
         </p>
       ) : (
-        <>
-          <WordList
-            words={filteredWords}
-            sourceLang={sourceLang}
-            sourceLabel={sourceLabel}
-            targetLabel={targetLabel}
-            revealed={revealed}
-            onToggleReveal={toggleReveal}
-            onToggleRemind={handleToggleRemind}
-            onRequestEdit={requestEdit}
-            onRequestDelete={requestDelete}
-          />
-        </>
+        <WordList
+          words={filteredWords}
+          sourceLang={sourceLang}
+          sourceLabel={sourceLabel}
+          targetLabel={targetLabel}
+          revealed={revealed}
+          fill={fillList}
+          onToggleFill={() => setFullscreen(!fillList)}
+          onToggleReveal={toggleReveal}
+          onToggleRemind={handleToggleRemind}
+          onRequestEdit={requestEdit}
+          onRequestDelete={requestDelete}
+        />
       )}
 
       {showReminderList && (
