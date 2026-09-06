@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { CEFR_LEVELS } from "@/app/lib/levels";
+import { translate } from "@/app/lib/speech";
 
 export interface NewWordInput {
   sourceText: string;
@@ -12,6 +13,8 @@ export interface NewWordInput {
 }
 
 interface AddWordFormProps {
+  sourceLang: string;
+  targetLang: string;
   sourceLabel: string;
   targetLabel: string;
   onAdd: (input: NewWordInput) => void;
@@ -21,6 +24,8 @@ const fieldClassName =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-500";
 
 export default function AddWordForm({
+  sourceLang,
+  targetLang,
   sourceLabel,
   targetLabel,
   onAdd,
@@ -30,11 +35,36 @@ export default function AddWordForm({
   const [description, setDescription] = useState("");
   const [level, setLevel] = useState("");
   const [isIdiom, setIsIdiom] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState<string | null>(null);
+
+  const source = sourceValue.trim();
+  const target = targetValue.trim();
+  // Translate whichever direction has an empty side to fill.
+  const canTranslate =
+    !translating && ((source && !target) || (target && !source));
+
+  async function handleTranslate() {
+    setTranslateError(null);
+    const reverse = !source && !!target;
+    setTranslating(true);
+    try {
+      const result = reverse
+        ? await translate(target, targetLang, sourceLang)
+        : await translate(source, sourceLang, targetLang);
+      if (reverse) setSourceValue(result);
+      else setTargetValue(result);
+    } catch (err) {
+      setTranslateError(
+        err instanceof Error ? err.message : "Translation failed",
+      );
+    } finally {
+      setTranslating(false);
+    }
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    const source = sourceValue.trim();
-    const target = targetValue.trim();
     if (!source || !target) return;
 
     onAdd({
@@ -50,6 +80,7 @@ export default function AddWordForm({
     setDescription("");
     setLevel("");
     setIsIdiom(false);
+    setTranslateError(null);
   }
 
   return (
@@ -77,6 +108,21 @@ export default function AddWordForm({
             className={fieldClassName}
           />
         </label>
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleTranslate}
+          disabled={!canTranslate}
+          className="w-fit rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          {translating ? "Translating…" : "⇄ Translate"}
+        </button>
+        {translateError && (
+          <span className="text-xs text-red-600 dark:text-red-400">
+            {translateError}
+          </span>
+        )}
       </div>
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-zinc-600 dark:text-zinc-400">
@@ -116,7 +162,7 @@ export default function AddWordForm({
       </div>
       <button
         type="submit"
-        disabled={!sourceValue.trim() || !targetValue.trim()}
+        disabled={!source || !target}
         className="w-fit rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
       >
         Add word

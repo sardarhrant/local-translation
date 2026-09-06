@@ -243,6 +243,8 @@ export default function TranslationApp() {
             {addOpen && (
               <div className="flex flex-col gap-4 border-t border-zinc-300 px-4 py-3 dark:border-zinc-700">
                 <AddWordForm
+                  sourceLang={sourceLang}
+                  targetLang={targetLang}
                   sourceLabel={sourceLabel}
                   targetLabel={targetLabel}
                   onAdd={handleAdd}

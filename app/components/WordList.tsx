@@ -1,9 +1,11 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { getDisplayText, type WordPair } from "@/app/lib/types";
 import { getLanguageName } from "@/app/lib/languages";
+import { canSpeak, speak } from "@/app/lib/speech";
+import PronunciationModal from "./PronunciationModal";
 import RowActionsMenu from "./RowActionsMenu";
 
 const ROW_GRID = "grid grid-cols-[1fr_auto_auto_auto] gap-x-3";
@@ -61,6 +63,51 @@ function DirectionToggle({
   );
 }
 
+function SpeakerIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M11 5 6 9H2v6h4l5 4z" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+    </svg>
+  );
+}
+
+/** Speaks the currently-shown text aloud via Azure TTS. Hidden for
+ * languages without a configured voice. */
+function SpeakButton({ text, langCode }: { text: string; langCode: string }) {
+  const [busy, setBusy] = useState(false);
+  if (!canSpeak(langCode)) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setBusy(true);
+        speak(text, langCode)
+          .catch(() => {})
+          .finally(() => setBusy(false));
+      }}
+      aria-label="Play pronunciation"
+      className={`inline-flex h-6 w-6 items-center justify-center rounded transition-colors ${
+        busy
+          ? "animate-pulse text-blue-500"
+          : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+      }`}
+    >
+      <SpeakerIcon />
+    </button>
+  );
+}
+
 interface WordRowProps {
   word: WordPair;
   sourceLang: string | null;
@@ -83,6 +130,10 @@ const WordRow = memo(function WordRow({
   onRequestDelete,
 }: WordRowProps) {
   const display = getDisplayText(word, sourceLang);
+  const [practiceOpen, setPracticeOpen] = useState(false);
+
+  const shownText = isRevealed ? display.targetText : display.sourceText;
+  const shownLang = isRevealed ? display.targetLang : display.sourceLang;
 
   return (
     <>
@@ -97,13 +148,12 @@ const WordRow = memo(function WordRow({
             isRevealed ? "text-blue-600 dark:text-blue-400" : undefined
           }
         >
-          {isRevealed ? display.targetText : display.sourceText}
+          {shownText}
         </span>
+        <SpeakButton text={shownText} langCode={shownLang} />
         {crossPair && (
           <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-medium uppercase text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-            {getLanguageName(
-              isRevealed ? display.targetLang : display.sourceLang,
-            )}
+            {getLanguageName(shownLang)}
           </span>
         )}
         {word.isIdiom && (
@@ -134,11 +184,18 @@ const WordRow = memo(function WordRow({
       <RowActionsMenu
         onEdit={() => onRequestEdit(word)}
         onDelete={() => onRequestDelete(word)}
+        onPractice={() => setPracticeOpen(true)}
       />
       {word.description && isRevealed && (
         <p className="col-span-full mt-1 w-fit rounded-[4px] border border-zinc-200 px-2 py-1 text-[14px] leading-snug text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
           {word.description}
         </p>
+      )}
+      {practiceOpen && (
+        <PronunciationModal
+          word={word}
+          onClose={() => setPracticeOpen(false)}
+        />
       )}
     </>
   );
