@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { CEFR_LEVELS } from "@/app/lib/levels";
-import { translate } from "@/app/lib/speech";
+import { translate } from "@/app/lib/translate";
 
 export interface NewWordInput {
   sourceText: string;

@@ -6,16 +6,11 @@ import { createPortal } from "react-dom";
 interface RowActionsMenuProps {
   onEdit: () => void;
   onDelete: () => void;
-  onPractice?: () => void;
 }
 
 const MENU_WIDTH = 128;
 
-export default function RowActionsMenu({
-  onEdit,
-  onDelete,
-  onPractice,
-}: RowActionsMenuProps) {
+export default function RowActionsMenu({ onEdit, onDelete }: RowActionsMenuProps) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<{ top: number; left: number } | null>(
     null,
@@ -91,19 +86,6 @@ export default function RowActionsMenu({
             }}
             className="z-50 overflow-hidden rounded-lg border border-zinc-300 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
           >
-            {onPractice && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false);
-                  onPractice();
-                }}
-                className="block w-full px-3 py-2 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
-              >
-                <span className="mr-1.5 text-lg leading-none">🎤</span> Practice
-              </button>
-            )}
             <button
               type="button"
               role="menuitem"
