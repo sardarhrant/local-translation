@@ -40,9 +40,9 @@ export default function AddWordForm({
 
   const source = sourceValue.trim();
   const target = targetValue.trim();
-  // Translate whichever direction has an empty side to fill.
-  const canTranslate =
-    !translating && ((source && !target) || (target && !source));
+  // Enabled whenever either field has text; translates forward from the
+  // source, or reverse when only the target is filled.
+  const canTranslate = !translating && (!!source || !!target);
 
   async function handleTranslate() {
     setTranslateError(null);

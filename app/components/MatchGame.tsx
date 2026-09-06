@@ -15,7 +15,7 @@ interface MatchGameProps {
 
 interface DragState {
   cardId: number;
-  fromSlotId: number | null;
+  fromIndex: number;
   offsetX: number;
   offsetY: number;
   startX: number;
@@ -29,13 +29,28 @@ function pickRound(pool: WordPair[]): WordPair[] {
   return shuffle(pool).slice(0, Math.min(ROUND_SIZE, pool.length));
 }
 
+/** A shuffled id order that isn't already fully solved (when avoidable). */
+function scrambleOrder(roundWords: WordPair[]): number[] {
+  const solved = roundWords.map((w) => w.id);
+  if (roundWords.length < 2) return solved;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const next = shuffle(solved);
+    if (next.some((id, i) => id !== solved[i])) return next;
+  }
+  return solved;
+}
+
+function swap(order: number[], a: number, b: number): number[] {
+  if (a === b) return order;
+  const next = order.slice();
+  [next[a], next[b]] = [next[b], next[a]];
+  return next;
+}
+
 export default function MatchGame({ words, sourceLang, onClose }: MatchGameProps) {
   const [roundWords, setRoundWords] = useState<WordPair[]>(() => pickRound(words));
-  const [trayOrder, setTrayOrder] = useState<number[]>(() =>
-    shuffle(roundWords.map((w) => w.id)),
-  );
-  const [placements, setPlacements] = useState<Record<number, number>>({});
-  const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
+  const [order, setOrder] = useState<number[]>(() => scrambleOrder(roundWords));
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
@@ -59,76 +74,41 @@ export default function MatchGame({ words, sourceLang, onClose }: MatchGameProps
     return map;
   }, [roundWords, sourceLang]);
 
-  const placedIds = useMemo(() => new Set(Object.values(placements)), [placements]);
-  const trayVisible = trayOrder.filter((id) => !placedIds.has(id));
-
-  const allFilled =
-    roundWords.length > 0 &&
-    roundWords.every((w) => placements[w.id] !== undefined);
   const allCorrect =
-    allFilled && roundWords.every((w) => placements[w.id] === w.id);
+    roundWords.length > 0 &&
+    roundWords.every((word, index) => order[index] === word.id);
 
   function restart() {
     const next = pickRound(words);
     setRoundWords(next);
-    setTrayOrder(shuffle(next.map((w) => w.id)));
-    setPlacements({});
-    setSelectedCardId(null);
+    setOrder(scrambleOrder(next));
+    setSelectedIndex(null);
   }
 
-  function placeCard(slotId: number, cardId: number, fromSlotId: number | null) {
-    setPlacements((prev) => {
-      const next = { ...prev };
-      if (fromSlotId !== null) delete next[fromSlotId];
-      next[slotId] = cardId;
-      return next;
-    });
+  function moveCard(from: number, to: number) {
+    setOrder((prev) => swap(prev, from, to));
   }
 
-  function removeFromSlot(slotId: number) {
-    setPlacements((prev) => {
-      const next = { ...prev };
-      delete next[slotId];
-      return next;
-    });
-  }
-
-  function handleCardTap(cardId: number, fromSlotId: number | null) {
-    if (selectedCardId === cardId) {
-      setSelectedCardId(null);
+  function handleRowTap(index: number) {
+    if (selectedIndex === null) {
+      setSelectedIndex(index);
       return;
     }
-    if (fromSlotId !== null) {
-      removeFromSlot(fromSlotId);
-    }
-    setSelectedCardId(cardId);
-  }
-
-  function handleSlotTap(slotId: number) {
-    if (selectedCardId === null) return;
-    const fromEntry = Object.entries(placements).find(
-      ([, cardId]) => cardId === selectedCardId,
-    );
-    placeCard(
-      slotId,
-      selectedCardId,
-      fromEntry ? Number(fromEntry[0]) : null,
-    );
-    setSelectedCardId(null);
+    if (selectedIndex !== index) moveCard(selectedIndex, index);
+    setSelectedIndex(null);
   }
 
   function handlePointerDown(
     event: React.PointerEvent<HTMLElement>,
     cardId: number,
-    fromSlotId: number | null,
+    fromIndex: number,
   ) {
     event.stopPropagation();
     const rect = event.currentTarget.getBoundingClientRect();
     event.currentTarget.setPointerCapture(event.pointerId);
-    setSelectedCardId(null);
     const state: DragState = {
       cardId,
-      fromSlotId,
+      fromIndex,
       offsetX: event.clientX - rect.left,
       offsetY: event.clientY - rect.top,
       startX: event.clientX,
@@ -144,16 +124,15 @@ export default function MatchGame({ words, sourceLang, onClose }: MatchGameProps
   function handlePointerMove(event: React.PointerEvent<HTMLElement>) {
     const current = dragRef.current;
     if (!current) return;
-    const distanceFromStart = Math.hypot(
+    const distance = Math.hypot(
       event.clientX - current.startX,
       event.clientY - current.startY,
     );
-    const moved = current.moved || distanceFromStart > TAP_MOVE_THRESHOLD;
     const next: DragState = {
       ...current,
       x: event.clientX,
       y: event.clientY,
-      moved,
+      moved: current.moved || distance > TAP_MOVE_THRESHOLD,
     };
     dragRef.current = next;
     setDrag(next);
@@ -166,31 +145,28 @@ export default function MatchGame({ words, sourceLang, onClose }: MatchGameProps
     setDrag(null);
 
     if (!current.moved) {
-      handleCardTap(current.cardId, current.fromSlotId);
+      handleRowTap(current.fromIndex);
       return;
     }
 
     const target = document.elementFromPoint(event.clientX, event.clientY);
-    const slotEl =
-      target instanceof Element ? target.closest("[data-slot-id]") : null;
-    const slotId = slotEl ? Number(slotEl.getAttribute("data-slot-id")) : null;
+    const rowEl =
+      target instanceof Element ? target.closest("[data-row-index]") : null;
+    const toIndex = rowEl
+      ? Number(rowEl.getAttribute("data-row-index"))
+      : NaN;
 
-    if (slotId !== null && !Number.isNaN(slotId)) {
-      placeCard(slotId, current.cardId, current.fromSlotId);
-    } else if (current.fromSlotId !== null) {
-      removeFromSlot(current.fromSlotId);
-    }
+    if (!Number.isNaN(toIndex)) moveCard(current.fromIndex, toIndex);
   }
 
-  function renderCard(cardId: number, fromSlotId: number | null, correct: boolean | null) {
+  function renderCard(cardId: number, index: number, correct: boolean) {
     const isDragging = drag?.cardId === cardId;
-    const isSelected = selectedCardId === cardId;
+    const isSelected = selectedIndex === index;
     const text = displayById.get(cardId)?.targetText ?? "";
 
     return (
       <div
-        key={cardId}
-        onPointerDown={(e) => handlePointerDown(e, cardId, fromSlotId)}
+        onPointerDown={(e) => handlePointerDown(e, cardId, index)}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
@@ -207,14 +183,12 @@ export default function MatchGame({ words, sourceLang, onClose }: MatchGameProps
               }
             : { touchAction: "none" }
         }
-        className={`w-fit min-w-[8rem] cursor-grab select-none rounded-lg border px-3 py-2 text-sm shadow-sm active:cursor-grabbing ${
-          correct === true
+        className={`flex-1 cursor-grab select-none rounded-lg border px-3 py-2 text-sm shadow-sm active:cursor-grabbing ${
+          correct
             ? "border-green-400 bg-green-50 text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300"
-            : correct === false
-              ? "border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300"
-              : isSelected
-                ? "border-zinc-900 bg-zinc-100 dark:border-zinc-100 dark:bg-zinc-800"
-                : "border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900"
+            : isSelected
+              ? "border-zinc-900 bg-zinc-100 dark:border-zinc-100 dark:bg-zinc-800"
+              : "border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900"
         }`}
       >
         {text}
@@ -236,7 +210,7 @@ export default function MatchGame({ words, sourceLang, onClose }: MatchGameProps
       >
         <div className="flex items-center justify-between">
           <h2 id="match-game-title" className="text-base font-semibold">
-            Practice: match the words
+            Practice: line up the translations
           </h2>
           <button
             type="button"
@@ -257,56 +231,33 @@ export default function MatchGame({ words, sourceLang, onClose }: MatchGameProps
             {allCorrect && (
               <div className="flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300">
                 <span className="text-xl">✅</span>
-                <span>
-                  All {roundWords.length} matched correctly! Nice work.
-                </span>
+                <span>All {roundWords.length} lined up correctly! Nice work.</span>
               </div>
             )}
 
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Drag a card from the right onto its matching word on the left
-              (or tap a card, then tap the slot).
+              Drag each translation up or down until it sits next to its word
+              (or tap two rows to swap them).
             </p>
 
-            <div className="grid grid-cols-2 gap-6 overflow-y-auto">
-              <div className="flex flex-col gap-2">
-                {roundWords.map((word) => {
-                  const placedId = placements[word.id];
-                  const isFilled = placedId !== undefined;
-                  const correct = isFilled ? placedId === word.id : null;
+            <div className="flex flex-col gap-2 overflow-y-auto">
+              {roundWords.map((word, index) => {
+                const cardId = order[index];
+                const correct = cardId === word.id;
 
-                  return (
-                    <div key={word.id} className="flex flex-col gap-1">
-                      <div className="rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
-                        {displayById.get(word.id)?.sourceText}
-                      </div>
-                      <div
-                        data-slot-id={word.id}
-                        onClick={() => handleSlotTap(word.id)}
-                        className={`flex min-h-[2.75rem] items-center rounded-lg border-2 border-dashed px-2 py-1 transition-colors ${
-                          isFilled
-                            ? correct
-                              ? "border-green-400 bg-green-50/50 dark:border-green-700"
-                              : "border-red-300 bg-red-50/50 dark:border-red-800"
-                            : "border-zinc-300 dark:border-zinc-700"
-                        }`}
-                      >
-                        {isFilled &&
-                          renderCard(placedId, word.id, correct)}
-                      </div>
+                return (
+                  <div
+                    key={word.id}
+                    data-row-index={index}
+                    className="flex items-stretch gap-3"
+                  >
+                    <div className="flex flex-1 items-center rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
+                      {displayById.get(word.id)?.sourceText}
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex flex-wrap content-start gap-2">
-                {trayVisible.map((id) => renderCard(id, null, null))}
-                {trayVisible.length === 0 && !allCorrect && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    All cards placed — fix any red ones above.
-                  </p>
-                )}
-              </div>
+                    {renderCard(cardId, index, correct)}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

@@ -207,15 +207,33 @@ export default function TranslationApp() {
             Translations
           </h1>
           <div className="flex items-center gap-2">
+            {!loading && <ThemeToggle />}
             <button
               type="button"
               onClick={() => setPanelsOpen((o) => !o)}
               aria-expanded={panelsOpen}
-              className="rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+              aria-label={panelsOpen ? "Hide options" : "Show options"}
+              className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+                panelsOpen
+                  ? "border-zinc-400 bg-zinc-100 dark:border-zinc-500 dark:bg-zinc-800"
+                  : "border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+              }`}
             >
-              {panelsOpen ? "Hide options" : "Options"}
+              <svg
+                className={`h-4 w-4 transition-transform ${
+                  panelsOpen ? "rotate-180" : ""
+                }`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
             </button>
-            {!loading && <ThemeToggle />}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
