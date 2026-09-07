@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { belongsToPair, type WordPair } from "@/app/lib/types";
+import {
+  belongsToPair,
+  findDuplicate,
+  wordIdentity,
+  type WordPair,
+} from "@/app/lib/types";
 import { getLanguageName } from "@/app/lib/languages";
 import { CEFR_LEVELS } from "@/app/lib/levels";
 import {
@@ -108,18 +113,24 @@ export default function TranslationApp() {
     description,
     level,
     isIdiom,
-  }: NewWordInput) {
-    const word = await addWord({
+  }: NewWordInput): Promise<boolean> {
+    const candidate = {
       langA: sourceLang,
       langB: targetLang,
       textA: sourceText,
       textB: targetText,
+    };
+    if (findDuplicate(words, candidate)) return false;
+
+    const word = await addWord({
+      ...candidate,
       description,
       level,
       isIdiom,
       remindMe: false,
     });
     setWords((prev) => [word, ...prev]);
+    return true;
   }
 
   async function handleBackupImport(
@@ -134,7 +145,17 @@ export default function TranslationApp() {
       remindMe: boolean;
     }[],
   ) {
-    await addWordsBulk(entries);
+    // Skip entries that already exist and collapse duplicates within the file.
+    const seen = new Set(words.map((w) => wordIdentity(w)));
+    const fresh = entries.filter((entry) => {
+      const key = wordIdentity(entry);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (fresh.length === 0) return;
+
+    await addWordsBulk(fresh);
     const loaded = await getAllWords();
     setWords((prev) => {
       const existingIds = new Set(prev.map((w) => w.id));

@@ -17,7 +17,8 @@ interface AddWordFormProps {
   targetLang: string;
   sourceLabel: string;
   targetLabel: string;
-  onAdd: (input: NewWordInput) => void;
+  /** Returns false when the word is already in the list (nothing added). */
+  onAdd: (input: NewWordInput) => Promise<boolean>;
 }
 
 const fieldClassName =
@@ -37,6 +38,8 @@ export default function AddWordForm({
   const [isIdiom, setIsIdiom] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [translateError, setTranslateError] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const source = sourceValue.trim();
   const target = targetValue.trim();
@@ -63,24 +66,35 @@ export default function AddWordForm({
     }
   }
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!source || !target) return;
+    if (!source || !target || saving) return;
 
-    onAdd({
-      sourceText: source,
-      targetText: target,
-      description: description.trim(),
-      level,
-      isIdiom,
-    });
-
-    setSourceValue("");
-    setTargetValue("");
-    setDescription("");
-    setLevel("");
-    setIsIdiom(false);
-    setTranslateError(null);
+    setAddError(null);
+    setSaving(true);
+    try {
+      const added = await onAdd({
+        sourceText: source,
+        targetText: target,
+        description: description.trim(),
+        level,
+        isIdiom,
+      });
+      if (!added) {
+        setAddError("That word is already in your list.");
+        return;
+      }
+      setSourceValue("");
+      setTargetValue("");
+      setDescription("");
+      setLevel("");
+      setIsIdiom(false);
+      setTranslateError(null);
+    } catch {
+      setAddError("Couldn't add the word — try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -92,7 +106,10 @@ export default function AddWordForm({
           </span>
           <input
             value={sourceValue}
-            onChange={(e) => setSourceValue(e.target.value)}
+            onChange={(e) => {
+              setSourceValue(e.target.value);
+              setAddError(null);
+            }}
             placeholder={`Word in ${sourceLabel}`}
             className={fieldClassName}
           />
@@ -103,7 +120,10 @@ export default function AddWordForm({
           </span>
           <input
             value={targetValue}
-            onChange={(e) => setTargetValue(e.target.value)}
+            onChange={(e) => {
+              setTargetValue(e.target.value);
+              setAddError(null);
+            }}
             placeholder={`Translation in ${targetLabel}`}
             className={fieldClassName}
           />
@@ -160,13 +180,20 @@ export default function AddWordForm({
           This is an idiom / phrase
         </label>
       </div>
-      <button
-        type="submit"
-        disabled={!source || !target}
-        className="w-fit rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
-      >
-        Add word
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={!source || !target || saving}
+          className="w-fit rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        >
+          {saving ? "Adding…" : "Add word"}
+        </button>
+        {addError && (
+          <span className="text-xs text-red-600 dark:text-red-400">
+            {addError}
+          </span>
+        )}
+      </div>
     </form>
   );
 }
