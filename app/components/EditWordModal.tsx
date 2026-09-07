@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { WordPair } from "@/app/lib/types";
 import { CEFR_LEVELS } from "@/app/lib/levels";
+import MicButton from "./MicButton";
 
 export interface WordEdits {
   textA: string;
@@ -39,6 +40,7 @@ export default function EditWordModal({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
+  const descBaseRef = useRef("");
 
   useEffect(() => {
     firstFieldRef.current?.focus();
@@ -91,42 +93,74 @@ export default function EditWordModal({
           <span className="text-zinc-600 dark:text-zinc-400">
             {sourceLabel}
           </span>
-          <input
-            ref={firstFieldRef}
-            value={textA}
-            onChange={(e) => {
-              setTextA(e.target.value);
-              setError(null);
-            }}
-            className={fieldClassName}
-          />
+          <div className="relative">
+            <input
+              ref={firstFieldRef}
+              value={textA}
+              onChange={(e) => {
+                setTextA(e.target.value);
+                setError(null);
+              }}
+              className={`${fieldClassName} w-full pr-9`}
+            />
+            <MicButton
+              lang={word.langA}
+              onText={(text) => {
+                setTextA(text);
+                setError(null);
+              }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2"
+            />
+          </div>
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-zinc-600 dark:text-zinc-400">
             {targetLabel}
           </span>
-          <input
-            value={textB}
-            onChange={(e) => {
-              setTextB(e.target.value);
-              setError(null);
-            }}
-            className={fieldClassName}
-          />
+          <div className="relative">
+            <input
+              value={textB}
+              onChange={(e) => {
+                setTextB(e.target.value);
+                setError(null);
+              }}
+              className={`${fieldClassName} w-full pr-9`}
+            />
+            <MicButton
+              lang={word.langB}
+              onText={(text) => {
+                setTextB(text);
+                setError(null);
+              }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2"
+            />
+          </div>
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-zinc-600 dark:text-zinc-400">
             Description (optional)
           </span>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            placeholder="Usage notes, an example sentence, context..."
-            className={fieldClassName}
-          />
+          <div className="relative">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="Usage notes, an example sentence, context..."
+              className={`${fieldClassName} w-full pr-9`}
+            />
+            <MicButton
+              lang={word.langA}
+              onStart={() => {
+                descBaseRef.current = description.trim()
+                  ? `${description.replace(/\s+$/, "")} `
+                  : "";
+              }}
+              onText={(text) => setDescription(descBaseRef.current + text)}
+              className="absolute right-1.5 top-2"
+            />
+          </div>
         </label>
 
         <label className="flex items-center gap-2 text-sm">
