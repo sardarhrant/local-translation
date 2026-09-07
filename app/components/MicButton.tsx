@@ -12,12 +12,20 @@ interface MicButtonProps {
   lang: string;
   /** Called with the recognized text (live, then final). */
   onText: (text: string) => void;
+  /** Called once when a dictation pass begins (e.g. to snapshot the field
+   * for append-style dictation). */
+  onStart?: () => void;
   className?: string;
 }
 
 /** A small toggle that dictates speech into a text field via the Web Speech
  * API. Renders nothing where recognition isn't supported (e.g. Firefox). */
-export default function MicButton({ lang, onText, className }: MicButtonProps) {
+export default function MicButton({
+  lang,
+  onText,
+  onStart,
+  className,
+}: MicButtonProps) {
   const [listening, setListening] = useState(false);
   const handleRef = useRef<RecognitionHandle | null>(null);
 
@@ -30,6 +38,7 @@ export default function MicButton({ lang, onText, className }: MicButtonProps) {
       handleRef.current?.stop();
       return;
     }
+    onStart?.();
     setListening(true);
     handleRef.current = recognize(lang, {
       onResult: (transcript) => {

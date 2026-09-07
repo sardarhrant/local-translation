@@ -259,6 +259,15 @@ export default function TranslationApp() {
 
   const starredWords = useMemo(() => words.filter((w) => w.remindMe), [words]);
 
+  const filtersActive =
+    search.trim() !== "" || typeFilter !== "all" || levelFilter !== "all";
+
+  function clearFilters() {
+    setSearch("");
+    setTypeFilter("all");
+    setLevelFilter("all");
+  }
+
   const sourceLabel = getLanguageName(sourceLang);
   const targetLabel = getLanguageName(targetLang);
 
@@ -353,7 +362,15 @@ export default function TranslationApp() {
               onClick={() => setFiltersOpen((o) => !o)}
               className="flex w-full items-center justify-between px-4 py-2.5 text-base font-medium"
             >
-              <span>Search & filters</span>
+              <span className="flex items-center gap-2">
+                Search & filters
+                {filtersActive && (
+                  <span
+                    className="h-2 w-2 rounded-full bg-blue-500"
+                    aria-label="filters active"
+                  />
+                )}
+              </span>
               <span className="text-zinc-500">{filtersOpen ? "−" : "+"}</span>
             </button>
             {filtersOpen && (
@@ -408,6 +425,15 @@ export default function TranslationApp() {
                 >
                   🎮 Practice
                 </button>
+                {filtersActive && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="w-fit rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 underline-offset-2 transition-colors hover:bg-zinc-100 hover:underline dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
           </div>

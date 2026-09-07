@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { CEFR_LEVELS } from "@/app/lib/levels";
 import { translate } from "@/app/lib/translate";
 import MicButton from "./MicButton";
@@ -41,6 +41,7 @@ export default function AddWordForm({
   const [translateError, setTranslateError] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const descBaseRef = useRef("");
 
   const source = sourceValue.trim();
   const target = targetValue.trim();
@@ -169,13 +170,25 @@ export default function AddWordForm({
         <span className="text-zinc-600 dark:text-zinc-400">
           Description (optional)
         </span>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={2}
-          placeholder="Usage notes, an example sentence, context..."
-          className={fieldClassName}
-        />
+        <div className="relative">
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            placeholder="Usage notes, an example sentence, context..."
+            className={`${fieldClassName} w-full pr-9`}
+          />
+          <MicButton
+            lang={sourceLang}
+            onStart={() => {
+              descBaseRef.current = description.trim()
+                ? `${description.replace(/\s+$/, "")} `
+                : "";
+            }}
+            onText={(text) => setDescription(descBaseRef.current + text)}
+            className="absolute right-1.5 top-2"
+          />
+        </div>
       </label>
       <div className="flex flex-wrap items-center gap-4">
         <select
