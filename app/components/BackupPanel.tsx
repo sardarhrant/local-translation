@@ -3,23 +3,7 @@
 import { useRef, useState } from "react";
 import type { WordPair } from "@/app/lib/types";
 import { wordDedupeKey, existingDedupeKeys } from "@/app/lib/dedupe";
-
-interface BackupEntry {
-  langA: string;
-  langB: string;
-  textA: string;
-  textB: string;
-  description: string;
-  level: string;
-  isIdiom: boolean;
-  remindMe: boolean;
-}
-
-interface BackupFile {
-  version: number;
-  exportedAt: string;
-  words: BackupEntry[];
-}
+import { downloadBackup, type BackupEntry, type BackupFile } from "@/app/lib/backup";
 
 interface BackupPanelProps {
   words: WordPair[];
@@ -46,41 +30,7 @@ export default function BackupPanel({ words, onImport }: BackupPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleExport() {
-    const payload: BackupFile = {
-      version: 2,
-      exportedAt: new Date().toISOString(),
-      words: words.map(
-        ({
-          langA,
-          langB,
-          textA,
-          textB,
-          description,
-          level,
-          isIdiom,
-          remindMe,
-        }) => ({
-          langA,
-          langB,
-          textA,
-          textB,
-          description,
-          level,
-          isIdiom,
-          remindMe,
-        }),
-      ),
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `translations-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBackup(words);
   }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {

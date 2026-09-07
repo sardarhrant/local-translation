@@ -93,6 +93,43 @@ function DirectionToggle({
   );
 }
 
+/** A row shown while the list is in multi-select mode. */
+function SelectableRow({
+  word,
+  sourceLang,
+  crossPair,
+  selected,
+  onToggle,
+}: {
+  word: WordPair;
+  sourceLang: string | null;
+  crossPair: boolean;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const display = getDisplayText(word, sourceLang);
+  return (
+    <label className="flex w-full cursor-pointer items-center gap-3">
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        className="h-4 w-4 shrink-0 rounded border-zinc-300 accent-zinc-900 dark:border-zinc-700 dark:accent-zinc-50"
+      />
+      <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+        <span>{display.sourceText}</span>
+        <span className="text-zinc-400 dark:text-zinc-500">→</span>
+        <span>{display.targetText}</span>
+        {crossPair && (
+          <span className="rounded bg-zinc-100 px-1 py-0.5 text-[10px] font-medium uppercase text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+            {getLanguageName(display.sourceLang)}–{getLanguageName(display.targetLang)}
+          </span>
+        )}
+      </span>
+    </label>
+  );
+}
+
 interface WordRowProps {
   word: WordPair;
   sourceLang: string | null;
@@ -102,6 +139,7 @@ interface WordRowProps {
   onToggleRemind: (word: WordPair) => void;
   onRequestEdit: (word: WordPair) => void;
   onRequestDelete: (word: WordPair) => void;
+  onStartSelect?: (id: number) => void;
 }
 
 const WordRow = memo(function WordRow({
@@ -113,6 +151,7 @@ const WordRow = memo(function WordRow({
   onToggleRemind,
   onRequestEdit,
   onRequestDelete,
+  onStartSelect,
 }: WordRowProps) {
   const display = getDisplayText(word, sourceLang);
   const [practiceOpen, setPracticeOpen] = useState(false);
@@ -169,6 +208,9 @@ const WordRow = memo(function WordRow({
         onEdit={() => onRequestEdit(word)}
         onDelete={() => onRequestDelete(word)}
         onPractice={() => setPracticeOpen(true)}
+        onSelect={
+          onStartSelect ? () => onStartSelect(word.id) : undefined
+        }
       />
       {word.description && isRevealed && (
         <p className="col-span-full mt-1 w-fit rounded-[4px] border border-zinc-200 px-2 py-1 text-[14px] leading-snug text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
@@ -200,6 +242,18 @@ interface WordListProps {
   /** When provided, a toggle appears next to the column labels to enter /
    * leave full-screen mode. */
   onToggleFill?: () => void;
+  /** When provided, the row menu offers "Select" to enter multi-select. */
+  onStartSelect?: (id: number) => void;
+  /** Present only while in multi-select mode. */
+  selection?: {
+    selectedIds: Set<number>;
+    onToggle: (id: number) => void;
+    onSelectAll: () => void;
+    onClear: () => void;
+    onExit: () => void;
+    onExport: () => void;
+    onDelete: () => void;
+  };
   onToggleReveal: (id: number) => void;
   onToggleRemind: (word: WordPair) => void;
   onRequestEdit: (word: WordPair) => void;
@@ -214,12 +268,15 @@ export default function WordList({
   revealed,
   fill = false,
   onToggleFill,
+  onStartSelect,
+  selection,
   onToggleReveal,
   onToggleRemind,
   onRequestEdit,
   onRequestDelete,
 }: WordListProps) {
   const crossPair = sourceLang === null;
+  const selectMode = !!selection;
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -251,30 +308,74 @@ export default function WordList({
       }`}
     >
       <div
-        className={`${ROW_GRID} ${
+        className={`${selectMode ? "flex" : ROW_GRID} ${
           fill ? "shrink-0" : ""
-        } bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400`}
+        } items-center bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400`}
       >
-        <span>
-          {crossPair ? "Word" : sourceLabel}
-          <span className="text-zinc-400 dark:text-zinc-500">
-            {" / "}
-            {crossPair ? "Translation" : targetLabel}
-          </span>
-        </span>
-        <span className="w-9" />
-        <span className="w-7" />
-        {onToggleFill ? (
-          <button
-            type="button"
-            onClick={onToggleFill}
-            aria-label={fill ? "Exit full screen" : "Full screen list"}
-            className="flex h-5 w-5 items-center justify-center justify-self-end rounded-full border border-zinc-300 text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
-          >
-            <FullscreenIcon exit={fill} />
-          </button>
+        {selection ? (
+          <div className="flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1">
+            <span>{selection.selectedIds.size} selected</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={
+                  selection.selectedIds.size === words.length
+                    ? selection.onClear
+                    : selection.onSelectAll
+                }
+                className="rounded px-2 py-1 font-medium transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800"
+              >
+                {selection.selectedIds.size === words.length ? "None" : "All"}
+              </button>
+              <button
+                type="button"
+                onClick={selection.onExport}
+                disabled={selection.selectedIds.size === 0}
+                className="rounded px-2 py-1 font-medium transition-colors hover:bg-zinc-200 disabled:opacity-40 dark:hover:bg-zinc-800"
+              >
+                Export
+              </button>
+              <button
+                type="button"
+                onClick={selection.onDelete}
+                disabled={selection.selectedIds.size === 0}
+                className="rounded px-2 py-1 font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                onClick={selection.onExit}
+                className="rounded px-2 py-1 font-medium transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         ) : (
-          <span className="w-6" />
+          <>
+            <span>
+              {crossPair ? "Word" : sourceLabel}
+              <span className="text-zinc-400 dark:text-zinc-500">
+                {" / "}
+                {crossPair ? "Translation" : targetLabel}
+              </span>
+            </span>
+            <span className="w-9" />
+            <span className="w-7" />
+            {onToggleFill ? (
+              <button
+                type="button"
+                onClick={onToggleFill}
+                aria-label={fill ? "Exit full screen" : "Full screen list"}
+                className="flex h-5 w-5 items-center justify-center justify-self-end rounded-full border border-zinc-300 text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+              >
+                <FullscreenIcon exit={fill} />
+              </button>
+            ) : (
+              <span className="w-6" />
+            )}
+          </>
         )}
       </div>
       <div
@@ -302,22 +403,41 @@ export default function WordList({
                   width: "100%",
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className={`${ROW_GRID} items-start px-4 py-2 text-sm ${
-                  index > 0
-                    ? "border-t border-zinc-200 dark:border-zinc-800"
-                    : ""
-                } ${word.level ? "pt-6" : ""}`}
+                className={
+                  selectMode
+                    ? `flex items-center px-4 py-2.5 text-sm ${
+                        index > 0
+                          ? "border-t border-zinc-200 dark:border-zinc-800"
+                          : ""
+                      }`
+                    : `${ROW_GRID} items-start px-4 py-2 text-sm ${
+                        index > 0
+                          ? "border-t border-zinc-200 dark:border-zinc-800"
+                          : ""
+                      } ${word.level ? "pt-6" : ""}`
+                }
               >
-                <WordRow
-                  word={word}
-                  sourceLang={sourceLang}
-                  crossPair={crossPair}
-                  isRevealed={revealed.has(word.id)}
-                  onToggleReveal={onToggleReveal}
-                  onToggleRemind={onToggleRemind}
-                  onRequestEdit={onRequestEdit}
-                  onRequestDelete={onRequestDelete}
-                />
+                {selection ? (
+                  <SelectableRow
+                    word={word}
+                    sourceLang={sourceLang}
+                    crossPair={crossPair}
+                    selected={selection.selectedIds.has(word.id)}
+                    onToggle={() => selection.onToggle(word.id)}
+                  />
+                ) : (
+                  <WordRow
+                    word={word}
+                    sourceLang={sourceLang}
+                    crossPair={crossPair}
+                    isRevealed={revealed.has(word.id)}
+                    onToggleReveal={onToggleReveal}
+                    onToggleRemind={onToggleRemind}
+                    onRequestEdit={onRequestEdit}
+                    onRequestDelete={onRequestDelete}
+                    onStartSelect={onStartSelect}
+                  />
+                )}
               </li>
             );
           })}

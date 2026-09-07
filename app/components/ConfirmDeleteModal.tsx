@@ -4,16 +4,17 @@ import { useEffect, useRef } from "react";
 import type { WordPair } from "@/app/lib/types";
 
 interface ConfirmDeleteModalProps {
-  word: WordPair;
+  words: WordPair[];
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 export default function ConfirmDeleteModal({
-  word,
+  words,
   onConfirm,
   onCancel,
 }: ConfirmDeleteModalProps) {
+  const many = words.length > 1;
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -26,6 +27,8 @@ export default function ConfirmDeleteModal({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onCancel]);
+
+  if (words.length === 0) return null;
 
   return (
     <div
@@ -40,14 +43,26 @@ export default function ConfirmDeleteModal({
         className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl dark:bg-zinc-900"
       >
         <h2 id="confirm-delete-title" className="text-base font-semibold">
-          Delete word?
+          {many ? `Delete ${words.length} words?` : "Delete word?"}
         </h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Are you sure you want to delete{" "}
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">
-            {word.textA} — {word.textB}
-          </span>{" "}
-          from the app?
+          {many ? (
+            <>
+              This permanently removes{" "}
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {words.length} words
+              </span>{" "}
+              from the app.
+            </>
+          ) : (
+            <>
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {words[0].textA} — {words[0].textB}
+              </span>{" "}
+              from the app?
+            </>
+          )}
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <button

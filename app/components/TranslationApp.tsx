@@ -1,12 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  belongsToPair,
-  findDuplicate,
-  wordIdentity,
-  type WordPair,
-} from "@/app/lib/types";
+import { belongsToPair, type WordPair } from "@/app/lib/types";
+import { findDuplicate, wordIdentity } from "@/app/lib/dedupe";
+import { downloadBackup } from "@/app/lib/backup";
 import { getLanguageName } from "@/app/lib/languages";
 import { CEFR_LEVELS } from "@/app/lib/levels";
 import {
@@ -41,8 +38,10 @@ export default function TranslationApp() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [levelFilter, setLevelFilter] = useState("all");
-  const [wordToDelete, setWordToDelete] = useState<WordPair | null>(null);
+  const [deleteTargets, setDeleteTargets] = useState<WordPair[]>([]);
   const [wordToEdit, setWordToEdit] = useState<WordPair | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [panelsOpen, setPanelsOpen] = useState(false);
@@ -95,16 +94,19 @@ export default function TranslationApp() {
     setSourceLang(targetLang);
     setTargetLang(sourceLang);
     setRevealed(new Set());
+    exitSelect();
   }
 
   function changeSourceLang(lang: string) {
     setSourceLang(lang);
     setRevealed(new Set());
+    exitSelect();
   }
 
   function changeTargetLang(lang: string) {
     setTargetLang(lang);
     setRevealed(new Set());
+    exitSelect();
   }
 
   async function handleAdd({
@@ -199,24 +201,62 @@ export default function TranslationApp() {
   }
 
   const requestDelete = useCallback((word: WordPair) => {
-    setWordToDelete(word);
+    setDeleteTargets([word]);
   }, []);
 
   function cancelDelete() {
-    setWordToDelete(null);
+    setDeleteTargets([]);
   }
 
   async function confirmDelete() {
-    if (!wordToDelete) return;
-    const id = wordToDelete.id;
-    await deleteWord(id);
-    setWords((prev) => prev.filter((w) => w.id !== id));
+    const ids = new Set(deleteTargets.map((w) => w.id));
+    if (ids.size === 0) return;
+
+    for (const id of ids) await deleteWord(id);
+
+    setWords((prev) => prev.filter((w) => !ids.has(w.id)));
     setRevealed((prev) => {
       const next = new Set(prev);
-      next.delete(id);
+      for (const id of ids) next.delete(id);
       return next;
     });
-    setWordToDelete(null);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.delete(id);
+      return next;
+    });
+    if (selectMode) exitSelect();
+    setDeleteTargets([]);
+  }
+
+  function startSelect(id: number) {
+    setFullscreen(false);
+    setSelectMode(true);
+    setSelectedIds(new Set([id]));
+  }
+
+  function exitSelect() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  function exportSelected() {
+    const chosen = words.filter((w) => selectedIds.has(w.id));
+    if (chosen.length > 0) downloadBackup(chosen);
+  }
+
+  function deleteSelected() {
+    const chosen = words.filter((w) => selectedIds.has(w.id));
+    if (chosen.length > 0) setDeleteTargets(chosen);
   }
 
   const handleReminderDue = useCallback((title: string, body: string) => {
@@ -266,6 +306,14 @@ export default function TranslationApp() {
     setSearch("");
     setTypeFilter("all");
     setLevelFilter("all");
+  }
+
+  function selectAllVisible() {
+    setSelectedIds(new Set(filteredWords.map((w) => w.id)));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
   }
 
   const sourceLabel = getLanguageName(sourceLang);
@@ -460,6 +508,20 @@ export default function TranslationApp() {
           revealed={revealed}
           fill={fillList}
           onToggleFill={() => setFullscreen(!fillList)}
+          onStartSelect={startSelect}
+          selection={
+            selectMode
+              ? {
+                  selectedIds,
+                  onToggle: toggleSelect,
+                  onSelectAll: selectAllVisible,
+                  onClear: clearSelection,
+                  onExit: exitSelect,
+                  onExport: exportSelected,
+                  onDelete: deleteSelected,
+                }
+              : undefined
+          }
           onToggleReveal={toggleReveal}
           onToggleRemind={handleToggleRemind}
           onRequestEdit={requestEdit}
@@ -479,9 +541,9 @@ export default function TranslationApp() {
         />
       )}
 
-      {wordToDelete && (
+      {deleteTargets.length > 0 && (
         <ConfirmDeleteModal
-          word={wordToDelete}
+          words={deleteTargets}
           onConfirm={confirmDelete}
           onCancel={cancelDelete}
         />

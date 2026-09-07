@@ -61,30 +61,3 @@ export function belongsToPair(
     (word.langA === langB && word.langB === langA)
   );
 }
-
-/** The four fields that make a word pair "the same" for de-duplication. */
-export type WordIdentityFields = Pick<
-  WordPair,
-  "langA" | "langB" | "textA" | "textB"
->;
-
-function sideKey(text: string, lang: string): string {
-  return `${lang}:${text.trim().toLowerCase()}`;
-}
-
-/** A direction-independent key: (dog/en ↔ собака/ru) matches whichever side
- * was entered first. Both text sides must match to count as a duplicate,
- * so a word with a different translation is still allowed. */
-export function wordIdentity(word: WordIdentityFields): string {
-  return [sideKey(word.textA, word.langA), sideKey(word.textB, word.langB)]
-    .sort()
-    .join("|");
-}
-
-export function findDuplicate<T extends WordIdentityFields>(
-  words: T[],
-  candidate: WordIdentityFields,
-): T | undefined {
-  const key = wordIdentity(candidate);
-  return words.find((word) => wordIdentity(word) === key);
-}
