@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { CEFR_LEVELS } from "@/app/lib/levels";
 import { translate } from "@/app/lib/translate";
+import MicButton from "./MicButton";
 
 export interface NewWordInput {
   sourceText: string;
@@ -104,29 +105,49 @@ export default function AddWordForm({
           <span className="text-zinc-600 dark:text-zinc-400">
             {sourceLabel}
           </span>
-          <input
-            value={sourceValue}
-            onChange={(e) => {
-              setSourceValue(e.target.value);
-              setAddError(null);
-            }}
-            placeholder={`Word in ${sourceLabel}`}
-            className={fieldClassName}
-          />
+          <div className="relative">
+            <input
+              value={sourceValue}
+              onChange={(e) => {
+                setSourceValue(e.target.value);
+                setAddError(null);
+              }}
+              placeholder={`Word in ${sourceLabel}`}
+              className={`${fieldClassName} w-full pr-9`}
+            />
+            <MicButton
+              lang={sourceLang}
+              onText={(text) => {
+                setSourceValue(text);
+                setAddError(null);
+              }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2"
+            />
+          </div>
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm">
           <span className="text-zinc-600 dark:text-zinc-400">
             {targetLabel}
           </span>
-          <input
-            value={targetValue}
-            onChange={(e) => {
-              setTargetValue(e.target.value);
-              setAddError(null);
-            }}
-            placeholder={`Translation in ${targetLabel}`}
-            className={fieldClassName}
-          />
+          <div className="relative">
+            <input
+              value={targetValue}
+              onChange={(e) => {
+                setTargetValue(e.target.value);
+                setAddError(null);
+              }}
+              placeholder={`Translation in ${targetLabel}`}
+              className={`${fieldClassName} w-full pr-9`}
+            />
+            <MicButton
+              lang={targetLang}
+              onText={(text) => {
+                setTargetValue(text);
+                setAddError(null);
+              }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2"
+            />
+          </div>
         </label>
       </div>
       <div className="flex items-center gap-3">
