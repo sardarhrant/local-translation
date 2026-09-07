@@ -177,10 +177,25 @@ export default function TranslationApp() {
     setWordToEdit(null);
   }
 
-  async function saveEdit(id: number, edits: WordEdits) {
+  async function saveEdit(id: number, edits: WordEdits): Promise<boolean> {
+    const original = words.find((w) => w.id === id);
+    if (!original) return false;
+
+    const editedIdentity = wordIdentity({
+      langA: original.langA,
+      langB: original.langB,
+      textA: edits.textA,
+      textB: edits.textB,
+    });
+    const collides = words.some(
+      (w) => w.id !== id && wordIdentity(w) === editedIdentity,
+    );
+    if (collides) return false;
+
     const updated = await updateWord(id, edits);
     setWords((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
     setWordToEdit(null);
+    return true;
   }
 
   const requestDelete = useCallback((word: WordPair) => {

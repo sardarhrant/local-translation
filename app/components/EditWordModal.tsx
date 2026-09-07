@@ -16,7 +16,8 @@ interface EditWordModalProps {
   word: WordPair;
   sourceLabel: string;
   targetLabel: string;
-  onSave: (id: number, edits: WordEdits) => void;
+  /** Returns false when the edit would collide with another word. */
+  onSave: (id: number, edits: WordEdits) => Promise<boolean>;
   onCancel: () => void;
 }
 
@@ -35,6 +36,8 @@ export default function EditWordModal({
   const [description, setDescription] = useState(word.description);
   const [level, setLevel] = useState(word.level);
   const [isIdiom, setIsIdiom] = useState(word.isIdiom);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -48,19 +51,28 @@ export default function EditWordModal({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onCancel]);
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const a = textA.trim();
     const b = textB.trim();
-    if (!a || !b) return;
+    if (!a || !b || saving) return;
 
-    onSave(word.id, {
-      textA: a,
-      textB: b,
-      description: description.trim(),
-      level,
-      isIdiom,
-    });
+    setError(null);
+    setSaving(true);
+    try {
+      const saved = await onSave(word.id, {
+        textA: a,
+        textB: b,
+        description: description.trim(),
+        level,
+        isIdiom,
+      });
+      if (!saved) setError("Another word with this pair already exists.");
+    } catch {
+      setError("Couldn't save — try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -82,7 +94,10 @@ export default function EditWordModal({
           <input
             ref={firstFieldRef}
             value={textA}
-            onChange={(e) => setTextA(e.target.value)}
+            onChange={(e) => {
+              setTextA(e.target.value);
+              setError(null);
+            }}
             className={fieldClassName}
           />
         </label>
@@ -93,7 +108,10 @@ export default function EditWordModal({
           </span>
           <input
             value={textB}
-            onChange={(e) => setTextB(e.target.value)}
+            onChange={(e) => {
+              setTextB(e.target.value);
+              setError(null);
+            }}
             className={fieldClassName}
           />
         </label>
@@ -137,6 +155,10 @@ export default function EditWordModal({
           This is an idiom / phrase
         </label>
 
+        {error && (
+          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        )}
+
         <div className="mt-2 flex justify-end gap-2">
           <button
             type="button"
@@ -147,10 +169,10 @@ export default function EditWordModal({
           </button>
           <button
             type="submit"
-            disabled={!textA.trim() || !textB.trim()}
+            disabled={!textA.trim() || !textB.trim() || saving}
             className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
           >
-            Save
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </form>
